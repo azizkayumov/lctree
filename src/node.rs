@@ -1,3 +1,4 @@
+#[derive(Copy, Clone)]
 pub enum Parent {
     Node(usize), // parent node in the tree
     Path(usize), // path to the root in the forest
