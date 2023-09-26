@@ -64,26 +64,34 @@ mod tests {
     use crate::node::{Node, self};
     use super::{rotate_right, rotate_left};
 
-    fn create_nodes() -> Vec<Node> {
-        let mut forest = Vec::new();
-        for i in 0..5 {
-            forest.push(Node::new(i, 0.0));
-        }
-        forest
+    fn create_nodes(n: usize) -> Vec<Node> {
+        (0..n).map(|i| Node::new(i, 0.0)).collect()
     }
 
     #[test]
-    pub fn rotate_left_test() {
-        // try to rotate a single node
-        // should do nothing
-        let mut forest = create_nodes();
+    pub fn rotate_left_base_case() {
+        // rotate left a single node, should do nothing:
+        let mut forest = create_nodes(1);
         rotate_left(&mut forest, 0);
         assert_eq!(forest[0].right, None);
         assert!(forest[0].right.is_none());
         assert!(matches!(forest[0].parent, node::Parent::Root));
+    }
 
+    #[test]
+    pub fn rotate_right_base_case() {
+        // rotate right a single node, should do nothing:
+        let mut forest = create_nodes(1);
+        rotate_right(&mut forest, 0);
+        assert!(forest[0].left.is_none());
+        assert!(forest[0].right.is_none());
+        assert!(matches!(forest[0].parent, node::Parent::Root));
+    }
+
+    #[test]
+    pub fn rotate_left_two_levels() {
         // Connect two nodes and rotate left
-        let mut forest = create_nodes();
+        let mut forest = create_nodes(2);
         forest[0].right = Some(1);
         forest[1].parent = node::Parent::Node(0);
         rotate_left(&mut forest, 0);
@@ -91,9 +99,12 @@ mod tests {
         assert_eq!(forest[1].left, Some(0));
         assert!(matches!(forest[0].parent, node::Parent::Node(1)));
         assert!(matches!(forest[1].parent, node::Parent::Root));
+    }
 
+    #[test]
+    pub fn rotate_left_with_parent() {
         // Connect all nodes and rotate left
-        let mut forest = create_nodes();
+        let mut forest = create_nodes(5);
         forest[0].right = Some(1);
         forest[1].parent = node::Parent::Node(0);
         forest[1].right = Some(2);
@@ -115,17 +126,9 @@ mod tests {
     }
 
     #[test]
-    pub fn rotate_right_test() {
-        // try to rotate a single node
-        // should do nothing
-        let mut forest = create_nodes();
-        rotate_right(&mut forest, 0);
-        assert!(forest[0].left.is_none());
-        assert!(forest[0].right.is_none());
-        assert!(matches!(forest[0].parent, node::Parent::Root));
-
+    pub fn rotate_right_two_levels() {
         // connect two nodes and rotate right
-        let mut forest = create_nodes();
+        let mut forest = create_nodes(2);
         forest[0].left = Some(1);
         forest[1].parent = node::Parent::Node(0);
         rotate_right(&mut forest, 0);
@@ -133,9 +136,12 @@ mod tests {
         assert_eq!(forest[1].right, Some(0));
         assert!(matches!(forest[0].parent, node::Parent::Node(1)));
         assert!(matches!(forest[1].parent, node::Parent::Root));
+    }
 
+    #[test]
+    pub fn rotate_right_with_parent() {
         // connect all nodes and rotate right
-        let mut forest = create_nodes();
+        let mut forest = create_nodes(5);
         forest[0].right = Some(1);
         forest[1].parent = node::Parent::Node(0);
         forest[1].left = Some(2);
