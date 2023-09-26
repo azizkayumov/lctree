@@ -1,3 +1,4 @@
+#[derive(Copy, Clone)]
 pub enum Parent {
     Node(usize), // parent node in the tree
     Path(usize), // path to the root in the forest
@@ -45,14 +46,5 @@ impl Node {
             weight: 0.0,
             path: Path::new(idx, weight),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
     }
 }
