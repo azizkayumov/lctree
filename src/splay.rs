@@ -72,29 +72,27 @@ pub fn splay(forest: &mut Vec<Node>, node_idx: usize) {
                 // zig
                 rotate_right(forest, parent_idx);
             }
-        } else {
-            if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
-                if forest[grandparent_idx].right == Some(parent_idx) {
-                    // zig-zig
-                    rotate_left(forest, grandparent_idx);
-                    rotate_left(forest, parent_idx);
-                } else {
-                    // zig-zag
-                    rotate_left(forest, parent_idx);
-                    rotate_right(forest, parent_idx);
-                }
-            } else {
-                // zig
+        } else if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
+            if forest[grandparent_idx].right == Some(parent_idx) {
+                // zig-zig
+                rotate_left(forest, grandparent_idx);
                 rotate_left(forest, parent_idx);
+            } else {
+                // zig-zag
+                rotate_left(forest, parent_idx);
+                rotate_right(forest, parent_idx);
             }
+        } else {
+            // zig
+            rotate_left(forest, parent_idx);
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::node::{Node, self};
-    use super::{rotate_right, rotate_left};
+    use super::{rotate_left, rotate_right};
+    use crate::node::{self, Node};
 
     fn create_nodes(n: usize) -> Vec<Node> {
         (0..n).map(|i| Node::new(i, 0.0)).collect()
@@ -250,8 +248,8 @@ mod tests {
         //    0                    0              0                   4
         //     \                    \              \                /   \
         //      1        =>          1      =>      4       =>     0     1
-        //     /                    /              / \              \   
-        //    2                    4              3   1              3 
+        //     /                    /              / \              \
+        //    2                    4              3   1              3
         //   / \                  /                \                  \
         //  3   4                3                  2                  2
         //                        \
