@@ -16,7 +16,7 @@ pub fn access(forest: &mut Vec<Node>, node_idx: usize) {
             forest[right_idx].parent = Parent::Path(path_idx);
             forest[path_idx].right = None;
         }
-        
+
         // attach the node as the path parent's right child
         forest[path_idx].right = Some(node_idx);
         forest[node_idx].parent = Parent::Node(path_idx);
@@ -52,7 +52,7 @@ mod tests {
         //      2         1               1               1
         forest[1].parent = Parent::Path(0);
         forest[1].right = Some(2);
-        forest[2].parent = Parent::Path(1);
+        forest[2].parent = Parent::Node(1);
         super::access(&mut forest, 2);
         assert!(matches!(forest[2].parent, Parent::Root));
         assert_eq!(forest[2].right, None);
