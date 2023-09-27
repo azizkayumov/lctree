@@ -4,7 +4,14 @@ use crate::{
 };
 
 pub fn link(forest: &mut Vec<Node>, v: usize, w: usize) {
-    // todo
+    access(forest, v);
+    access(forest, w);
+    if !matches!(forest[v].parent, Parent::Root) || v == w {
+        return; // already connected
+    }
+    assert!(forest[w].right.is_none(), "link: w should be a root!");
+    forest[w].right = Some(v);
+    forest[v].parent = Parent::Node(w);
 }
 
 #[cfg(test)]
@@ -30,14 +37,12 @@ mod tests {
     #[test]
     pub fn already_connected() {
         // '2' has a right child '3':
-        // link(0, 3) should do nothing, and result in:
-        //   0                3
-        //  / \              /
-        // 1   2     =>     2
-        //      \          /
-        //       3        0
-        //               /
-        //              1
+        // link(0, 3) should add no link, and result in (| denotes a path pointer):
+        //   0                0             0            3
+        //  / \              /  |          /  |         /
+        // 1   2     =>     1   2    =>   1   3   =>   0
+        //      \                \           /        / \
+        //       3                3         2        1   2
         //
         let mut forest = create_nodes(4);
         forest[0].left = Some(1);
@@ -48,30 +53,28 @@ mod tests {
         forest[3].parent = Parent::Node(2);
         link(&mut forest, 0, 3);
         assert!(matches!(forest[3].parent, Parent::Root));
-        assert_eq!(forest[3].left, Some(2));
+        assert_eq!(forest[3].left, Some(0));
         assert_eq!(forest[3].right, None);
-        assert!(matches!(forest[2].parent, Parent::Node(3)));
-        assert_eq!(forest[2].left, Some(0));
-        assert_eq!(forest[2].right, None);
-        assert!(matches!(forest[0].parent, Parent::Node(2)));
+        assert!(matches!(forest[0].parent, Parent::Node(3)));
         assert_eq!(forest[0].left, Some(1));
-        assert_eq!(forest[0].right, None);
+        assert_eq!(forest[0].right, Some(2));
         assert!(matches!(forest[1].parent, Parent::Node(0)));
         assert_eq!(forest[1].left, None);
         assert_eq!(forest[1].right, None);
+        assert!(matches!(forest[2].parent, Parent::Node(0)));
+        assert_eq!(forest[2].left, None);
+        assert_eq!(forest[2].right, None);
     }
 
     #[test]
     pub fn already_connected_with_path() {
-        // '3' has a path pointer to '2':
-        // link(0, 1) should do nothing, and result in:
-        //   0               2             3
-        //  / \             / \           /
-        // 1   2     =>    0   3    =>   2
-        //     |          /             /
-        //     3         1             0
-        //                            /
-        //                           1
+        // '3' has a path pointer to '2', and '2' has a path pointer to '0':
+        // link(0, 1) should add no link, and result in (| denotes a path pointer):
+        //   0               0              0               3
+        //  / \             / |            / |             /
+        // 1   2     =>    1  2    =>     1  3      =>    0
+        //     |              |             /            / \
+        //     3              3            2            1   2
         //
         let mut forest = create_nodes(4);
         forest[0].left = Some(1);
@@ -81,17 +84,17 @@ mod tests {
         forest[3].parent = Parent::Path(2);
         link(&mut forest, 0, 3);
         assert!(matches!(forest[3].parent, Parent::Root));
-        assert_eq!(forest[3].left, Some(2));
+        assert_eq!(forest[3].left, Some(0));
         assert_eq!(forest[3].right, None);
-        assert!(matches!(forest[2].parent, Parent::Node(3)));
-        assert_eq!(forest[2].left, Some(0));
-        assert_eq!(forest[2].right, None);
-        assert!(matches!(forest[0].parent, Parent::Node(2)));
+        assert!(matches!(forest[0].parent, Parent::Node(3)));
         assert_eq!(forest[0].left, Some(1));
-        assert_eq!(forest[0].right, None);
+        assert_eq!(forest[0].right, Some(2));
         assert!(matches!(forest[1].parent, Parent::Node(0)));
         assert_eq!(forest[1].left, None);
         assert_eq!(forest[1].right, None);
+        assert!(matches!(forest[2].parent, Parent::Node(0)));
+        assert_eq!(forest[2].left, None);
+        assert_eq!(forest[2].right, None);
     }
 
     #[test]
@@ -112,7 +115,7 @@ mod tests {
         forest[0].right = Some(2);
         forest[1].parent = Parent::Node(0);
         forest[2].parent = Parent::Node(0);
-        link(&mut forest, 1, 3);
+        link(&mut forest, 3, 1);
         assert!(matches!(forest[1].parent, Parent::Root));
         assert_eq!(forest[1].right, Some(3));
         assert_eq!(forest[1].left, None);
@@ -123,5 +126,7 @@ mod tests {
         assert_eq!(forest[0].right, Some(2));
         assert_eq!(forest[0].left, None);
         assert!(matches!(forest[2].parent, Parent::Node(0)));
+        assert_eq!(forest[2].right, None);
+        assert_eq!(forest[2].left, None);
     }
 }
