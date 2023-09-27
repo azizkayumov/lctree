@@ -8,9 +8,9 @@ pub fn connected(forest: &mut Vec<Node>, v: usize, w: usize) -> bool {
         v < forest.len() || w < forest.len(),
         "splay: node_idx out of bounds"
     );
-    access(forest, v);
+    access(forest, v); // v is now the root of the tree
     access(forest, w);
-    // if v is still root of its tree, then it is not connected to w:
+    // if v is not the root of the tree anymore, then v and w are connected:
     !matches!(forest[v].parent, Parent::Root) || v == w
 }
 
