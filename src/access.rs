@@ -3,7 +3,7 @@ use crate::{
     splay::splay,
 };
 
-// constructs a path from the root to the node at idx
+// constructs a path from a node to the root of the tree
 pub fn access(forest: &mut Vec<Node>, node_idx: usize) {
     assert!(node_idx < forest.len(), "access: node_idx out of bounds");
     splay(forest, node_idx);
