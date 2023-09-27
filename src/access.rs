@@ -1,4 +1,7 @@
-use crate::{node::{Node, Parent}, splay::splay};
+use crate::{
+    node::{Node, Parent},
+    splay::splay,
+};
 
 // constructs a path from the root to the node at idx
 pub fn access(forest: &mut Vec<Node>, node_idx: usize) {
