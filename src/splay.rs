@@ -1,6 +1,6 @@
 use crate::node::{Node, Parent};
 
-pub fn rotate_left(forest: &mut Vec<Node>, node_idx: usize) {
+fn rotate_left(forest: &mut Vec<Node>, node_idx: usize) {
     // base cases:
     // - node_idx is out of bounds
     // - node_idx should have a right child
@@ -27,7 +27,7 @@ pub fn rotate_left(forest: &mut Vec<Node>, node_idx: usize) {
     }
 }
 
-pub fn rotate_right(forest: &mut Vec<Node>, node_idx: usize) {
+fn rotate_right(forest: &mut Vec<Node>, node_idx: usize) {
     // base cases:
     // - node_idx is out of bounds
     // - node_idx should have a left child
@@ -118,8 +118,9 @@ mod tests {
         forest[0].right = Some(1);
         forest[1].parent = node::Parent::Node(0);
         rotate_left(&mut forest, 0);
-        assert_eq!(forest[0].right, None);
         assert_eq!(forest[1].left, Some(0));
+        assert_eq!(forest[0].right, None);
+        assert_eq!(forest[0].left, None);
         assert!(matches!(forest[0].parent, node::Parent::Node(1)));
         assert!(matches!(forest[1].parent, node::Parent::Root));
     }
@@ -233,7 +234,9 @@ mod tests {
         forest[1].parent = node::Parent::Node(0);
         super::splay(&mut forest, 1);
         assert_eq!(forest[0].right, None);
+        assert_eq!(forest[0].left, None);
         assert_eq!(forest[1].left, Some(0));
+        assert_eq!(forest[1].right, None);
         assert!(matches!(forest[0].parent, node::Parent::Node(1)));
         assert!(matches!(forest[1].parent, node::Parent::Root));
     }
