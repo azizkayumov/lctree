@@ -5,6 +5,7 @@ use crate::{
 
 // constructs a path from the root to the node at idx
 pub fn access(forest: &mut Vec<Node>, node_idx: usize) {
+    assert!(node_idx < forest.len(), "access: node_idx out of bounds");
     splay(forest, node_idx);
 
     if let Some(right_idx) = forest[node_idx].right {
@@ -36,7 +37,7 @@ mod tests {
     }
 
     #[test]
-    pub fn access_base_case() {
+    pub fn base_case() {
         // access a single node, should do nothing
         let mut forest = create_nodes(1);
         super::access(&mut forest, 0);
@@ -44,7 +45,7 @@ mod tests {
     }
 
     #[test]
-    pub fn access_splay_leaf() {
+    pub fn access_leaf() {
         let mut forest = create_nodes(3);
         // '1' has a path pointer to '0', '1' has a right child '2'.
         // after access(2), '2' should be the root of the tree:
