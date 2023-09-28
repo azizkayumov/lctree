@@ -3,6 +3,7 @@ use crate::{
     node::{Node, Parent},
 };
 
+// creates a link between two nodes in the forest (w becomes the parent of v)
 pub fn link(forest: &mut Vec<Node>, v: usize, w: usize) {
     assert!(
         v < forest.len() && w < forest.len(),

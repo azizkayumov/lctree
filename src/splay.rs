@@ -54,6 +54,7 @@ fn rotate_right(forest: &mut Vec<Node>, node_idx: usize) {
     }
 }
 
+// makes node_idx the root of its Splay tree
 pub fn splay(forest: &mut Vec<Node>, node_idx: usize) {
     assert!(node_idx < forest.len(), "splay: node_idx out of bounds");
     while let Parent::Node(parent_idx) = forest[node_idx].parent {

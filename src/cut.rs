@@ -3,6 +3,7 @@ use crate::{
     node::{Node, Parent},
 };
 
+// cuts the link between v and its parent.
 pub fn cut(forest: &mut Vec<Node>, v: usize) {
     assert!(v < forest.len(), "cut: node_idx out of bounds");
     self::access(forest, v);

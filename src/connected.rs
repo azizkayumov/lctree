@@ -3,6 +3,7 @@ use crate::{
     node::{Node, Parent},
 };
 
+// checks if v and w are connected in the forest
 pub fn connected(forest: &mut Vec<Node>, v: usize, w: usize) -> bool {
     assert!(
         v < forest.len() || w < forest.len(),
