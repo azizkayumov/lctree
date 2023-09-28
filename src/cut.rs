@@ -4,6 +4,7 @@ use crate::{
 };
 
 pub fn cut(forest: &mut Vec<Node>, v: usize) {
+    assert!(v < forest.len(), "cut: node_idx out of bounds");
     self::access(forest, v);
     if let Some(left) = forest[v].left {
         forest[left].parent = Parent::Root;

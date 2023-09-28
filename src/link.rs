@@ -4,6 +4,10 @@ use crate::{
 };
 
 pub fn link(forest: &mut Vec<Node>, v: usize, w: usize) {
+    assert!(
+        v < forest.len() && w < forest.len(),
+        "link: node_idx out of bounds"
+    );
     access(forest, v);
     access(forest, w);
     if !matches!(forest[v].parent, Parent::Root) || v == w {

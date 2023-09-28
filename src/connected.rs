@@ -6,7 +6,7 @@ use crate::{
 pub fn connected(forest: &mut Vec<Node>, v: usize, w: usize) -> bool {
     assert!(
         v < forest.len() || w < forest.len(),
-        "splay: node_idx out of bounds"
+        "connected: node_idx out of bounds"
     );
     access(forest, v); // v is now the root of the tree
     access(forest, w);
