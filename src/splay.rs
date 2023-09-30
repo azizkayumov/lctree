@@ -1,10 +1,10 @@
 use crate::node::{Node, Parent};
 
-fn rotate_left(forest: &mut Vec<Node>, node_idx: usize) {
+fn rotate_left(forest: &mut [Node], node_idx: usize) {
     // base cases:
     // - node_idx is out of bounds
     // - node_idx should have a right child
-    if node_idx >= forest.len() || forest[node_idx].right.is_none() {
+    if forest[node_idx].right.is_none() {
         return;
     }
 
@@ -27,11 +27,11 @@ fn rotate_left(forest: &mut Vec<Node>, node_idx: usize) {
     }
 }
 
-fn rotate_right(forest: &mut Vec<Node>, node_idx: usize) {
+fn rotate_right(forest: &mut [Node], node_idx: usize) {
     // base cases:
     // - node_idx is out of bounds
     // - node_idx should have a left child
-    if node_idx >= forest.len() || forest[node_idx].left.is_none() {
+    if forest[node_idx].left.is_none() {
         return;
     }
 
@@ -55,7 +55,7 @@ fn rotate_right(forest: &mut Vec<Node>, node_idx: usize) {
 }
 
 // makes node_idx the root of its Splay tree
-pub fn splay(forest: &mut Vec<Node>, node_idx: usize) {
+pub fn splay(forest: &mut [Node], node_idx: usize) {
     assert!(node_idx < forest.len(), "splay: node_idx out of bounds");
     while let Parent::Node(parent_idx) = forest[node_idx].parent {
         if forest[parent_idx].left == Some(node_idx) {
