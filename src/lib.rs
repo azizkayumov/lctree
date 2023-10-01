@@ -2,6 +2,7 @@
 mod node;
 mod path;
 mod splay;
+
 use crate::{
     node::{Node, Parent},
     splay::splay,
@@ -383,4 +384,7 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    pub fn findmin() {}
 }

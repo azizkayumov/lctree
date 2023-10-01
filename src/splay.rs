@@ -54,10 +54,30 @@ fn rotate_right(forest: &mut [Node], node_idx: usize) {
     }
 }
 
+fn unflip(forest: &mut [Node], node_idx: usize) {
+    if forest[node_idx].flipped {
+        forest[node_idx].flipped = false;
+        std::mem::swap(&mut forest[node_idx].left, &mut forest[node_idx].right);
+        if let Some(left_child) = forest[node_idx].left {
+            forest[left_child].flipped ^= true;
+        }
+        if let Some(right_child) = forest[node_idx].right {
+            forest[right_child].flipped ^= true;
+        }
+    }
+}
+
 // makes node_idx the root of its Splay tree
 pub fn splay(forest: &mut [Node], node_idx: usize) {
     assert!(node_idx < forest.len(), "splay: node_idx out of bounds");
     while let Parent::Node(parent_idx) = forest[node_idx].parent {
+        // unflip the node and its parent
+        if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
+            unflip(forest, grandparent_idx);
+        }
+        unflip(forest, parent_idx);
+        unflip(forest, node_idx);
+
         if forest[parent_idx].left == Some(node_idx) {
             if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
                 if forest[grandparent_idx].left == Some(parent_idx) {
@@ -88,6 +108,7 @@ pub fn splay(forest: &mut [Node], node_idx: usize) {
             rotate_left(forest, parent_idx);
         }
     }
+    unflip(forest, node_idx);
 }
 
 #[cfg(test)]
@@ -279,5 +300,26 @@ mod tests {
         assert!(matches!(forest[3].parent, node::Parent::Node(0)));
         assert_eq!(forest[3].right, Some(2));
         assert!(matches!(forest[2].parent, node::Parent::Node(3)));
+    }
+
+    #[test]
+    fn unflip() {
+        let mut forest = create_nodes(3);
+        forest[0].flipped = true;
+        forest[0].left = Some(1);
+        forest[0].right = Some(2);
+        forest[1].parent = node::Parent::Node(0);
+        forest[2].parent = node::Parent::Node(0);
+        //   0
+        //  / \
+        // 1   2
+
+        // unflip should swap left and right children
+        super::unflip(&mut forest, 0);
+        assert!(!forest[0].flipped);
+        assert_eq!(forest[0].left, Some(2));
+        assert_eq!(forest[0].right, Some(1));
+        assert!(forest[1].flipped);
+        assert!(forest[2].flipped);
     }
 }
