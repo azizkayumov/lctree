@@ -73,7 +73,7 @@ impl LinkCutTree {
 
     // Finds the maximum weight in the path from v and its parent
     pub fn findmax(&mut self, v: usize) -> usize {
-        //self.forest[v].max_weight_idx = v;
+        self.forest[v].max_weight_idx = v;
         self.access(v);
         self.forest[v].max_weight_idx
     }
@@ -81,6 +81,7 @@ impl LinkCutTree {
 
 #[cfg(test)]
 mod tests {
+    use std::time;
     use crate::node::Parent;
 
     #[test]
@@ -427,24 +428,13 @@ mod tests {
         lctree.forest[9].weight = 5.0;
 
         let ground_truth = vec![0, 1, 1, 1, 1, 5, 6, 7, 8, 9];
-        for i in 0..10 {
-            assert_eq!(lctree.findmax(i), ground_truth[i]);
+        for _ in 0..1000 {
+            let v = time::SystemTime::now()
+                .duration_since(time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos() as usize
+                % 10;
+            assert_eq!(lctree.findmax(v), ground_truth[v]);
         }
-        // reverse the order of findmax calls:
-        for i in 0..10 {
-            assert_eq!(lctree.findmax(i), ground_truth[i]);
-        }
-
-        for node in lctree.forest.iter() {
-            println!("{}", node.to_str());
-        }
-        println!("----------------------");
-        let max4 = lctree.findmax(4);
-
-        for node in lctree.forest.iter() {
-            println!("{}", node.to_str());
-        }
-
-        assert_eq!(max4, 1);
     }
 }
