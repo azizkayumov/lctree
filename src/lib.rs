@@ -70,6 +70,22 @@ impl LinkCutTree {
             self.forest[v].left = None;
         }
     }
+
+    // Finds the maximum weight in the path from v and its parent
+    pub fn findmax(&mut self, v: usize) -> usize {
+        self.access(v);
+
+        // find the root of the tree containing v (go left as far as possible)
+        let mut max_idx = v;
+        let mut cur = v;
+        while let Some(left_idx) = self.forest[cur].left {
+            if self.forest[left_idx].weight > self.forest[max_idx].weight {
+                max_idx = left_idx;
+            }
+            cur = left_idx;
+        }
+        max_idx
+    }
 }
 
 #[cfg(test)]
@@ -386,5 +402,46 @@ mod tests {
     }
 
     #[test]
-    pub fn findmin() {}
+    pub fn findmax() {
+        // We form a link-cut tree from a rooted tree with the following structure
+        // (the numbers in parentheses are the weights of the nodes):
+        //     0(0)
+        //    /    \
+        //   1(8)   6(1)
+        //  /   \     \
+        // 2(7)  3(6)  7(3)
+        //      /   \     \
+        //    4(2)  5(9)   8(4)
+        //                  /
+        //                9(5)
+        let mut lctree = super::LinkCutTree::new(10);
+        lctree.link(1, 0);
+        lctree.link(2, 1);
+        lctree.link(3, 1);
+        lctree.link(4, 3);
+        lctree.link(5, 3);
+        lctree.link(6, 0);
+        lctree.link(7, 6);
+        lctree.link(8, 7);
+        lctree.link(9, 8);
+        lctree.forest[0].weight = 0.0;
+        lctree.forest[1].weight = 8.0;
+        lctree.forest[2].weight = 7.0;
+        lctree.forest[3].weight = 6.0;
+        lctree.forest[4].weight = 2.0;
+        lctree.forest[5].weight = 9.0;
+        lctree.forest[6].weight = 1.0;
+        lctree.forest[7].weight = 3.0;
+        lctree.forest[8].weight = 4.0;
+        lctree.forest[9].weight = 5.0;
+
+        let ground_truth = vec![0, 1, 1, 1, 1, 5, 6, 7, 8, 9];
+        for i in 0..10 {
+            assert_eq!(lctree.findmax(i), ground_truth[i]);
+        }
+        // reverse the order of findmax calls:
+        for i in 0..10 {
+            assert_eq!(lctree.findmax(i), ground_truth[i]);
+        }
+    }
 }

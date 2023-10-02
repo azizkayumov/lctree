@@ -11,7 +11,9 @@ pub struct Node {
     pub right: Option<usize>,
     pub parent: Parent,
     pub flipped: bool,
-    pub weight: f64, // for path aggregation
+    // for path aggregation:
+    pub weight: f64,
+    pub max_weight_idx: usize,
 }
 
 impl Node {
@@ -23,6 +25,7 @@ impl Node {
             parent: Parent::Root,
             flipped: false,
             weight,
+            max_weight_idx: idx,
         }
     }
 }
