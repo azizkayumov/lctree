@@ -1,5 +1,12 @@
 use crate::node::{Node, Parent};
 
+fn update_max(forest: &mut [Node], node_idx: usize, new_max_idx: usize) {
+    let cur_max_idx = forest[node_idx].max_weight_idx;
+    if forest[cur_max_idx].weight < forest[new_max_idx].weight {
+        forest[node_idx].max_weight_idx = new_max_idx;
+    }
+}
+
 fn rotate_left(forest: &mut [Node], node_idx: usize) {
     // base cases:
     // - node_idx is out of bounds
@@ -25,6 +32,7 @@ fn rotate_left(forest: &mut [Node], node_idx: usize) {
     if let Some(new_right_child) = forest[node_idx].right {
         forest[new_right_child].parent = Parent::Node(node_idx);
     }
+    update_max(forest, right_child, node_idx);
 }
 
 fn rotate_right(forest: &mut [Node], node_idx: usize) {

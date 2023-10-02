@@ -73,18 +73,9 @@ impl LinkCutTree {
 
     // Finds the maximum weight in the path from v and its parent
     pub fn findmax(&mut self, v: usize) -> usize {
+        //self.forest[v].max_weight_idx = v;
         self.access(v);
-
-        // find the root of the tree containing v (go left as far as possible)
-        let mut max_idx = v;
-        let mut cur = v;
-        while let Some(left_idx) = self.forest[cur].left {
-            if self.forest[left_idx].weight > self.forest[max_idx].weight {
-                max_idx = left_idx;
-            }
-            cur = left_idx;
-        }
-        max_idx
+        self.forest[v].max_weight_idx
     }
 }
 
@@ -443,5 +434,17 @@ mod tests {
         for i in 0..10 {
             assert_eq!(lctree.findmax(i), ground_truth[i]);
         }
+
+        for node in lctree.forest.iter() {
+            println!("{}", node.to_str());
+        }
+        println!("----------------------");
+        let max4 = lctree.findmax(4);
+
+        for node in lctree.forest.iter() {
+            println!("{}", node.to_str());
+        }
+
+        assert_eq!(max4, 1);
     }
 }

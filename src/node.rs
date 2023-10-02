@@ -28,4 +28,19 @@ impl Node {
             max_weight_idx: idx,
         }
     }
+
+    pub fn to_str(&self) -> String {
+        let parent = match self.parent {
+            Parent::Node(idx) => format!("Node({})", idx),
+            Parent::Path(idx) => format!("Path({})", idx),
+            Parent::Root => "Root".to_string(),
+        };
+        format!(
+            "Node {{ idx: {}, left: {:?}, right: {:?}, parent: {:?}",
+            self.idx,
+            self.left,
+            self.right,
+            parent,
+        )
+    }
 }
