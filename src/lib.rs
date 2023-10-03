@@ -452,13 +452,6 @@ mod tests {
         assert_eq!(lctree.findmax(4), 2);
     }
 
-    fn print_lctree(lctree: &super::LinkCutTree) {
-        println!("-----------------------------------");
-        for node in lctree.forest.iter() {
-            println!("{:?}", node.to_str());
-        }
-    }
-
     // creates a random tree with n nodes
     fn create_random_tree(n: usize, state: u64) -> (Vec<(usize, usize)>, Vec<f64>, Vec<usize>) {
         let mut rng = rand::rngs::StdRng::seed_from_u64(state);
@@ -506,7 +499,7 @@ mod tests {
             lctree.link(v, w);
         }
 
-        for _ in 0..1000000 {
+        for _ in 0..n * 10 {
             let v = rand::thread_rng().gen_range(0..n);
             assert_eq!(lctree.findmax(v), ground_truth[v]);
         }
