@@ -36,11 +36,12 @@ impl Node {
             Parent::Root => "Root".to_string(),
         };
         format!(
-            "Node {{ idx: {}, left: {:?}, right: {:?}, parent: {:?}",
+            "Node {{ idx: {}, left: {:?}, right: {:?}, parent: {:?}, max_weight_idx: {} }}",
             self.idx,
             self.left,
             self.right,
             parent,
+            self.max_weight_idx
         )
     }
 }
