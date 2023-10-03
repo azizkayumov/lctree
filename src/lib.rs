@@ -42,9 +42,6 @@ impl LinkCutTree {
             self.forest[path_idx].right = Some(v);
             self.forest[v].parent = Parent::Node(path_idx);
 
-            // update aggregate information
-            update_max(&mut self.forest, path_idx);
-
             splay(&mut self.forest, v);
         }
 
@@ -52,20 +49,16 @@ impl LinkCutTree {
         update_max(&mut self.forest, v);
     }
 
-    // Creates a link between two nodes in the forest (v becomes the parent of w)
+    /// Creates a link between two nodes in the forest (v becomes the parent of w)
+    /// # Panics if v has a left child (i.e. v is not a root node)
     pub fn link(&mut self, v: usize, w: usize) {
         self.access(v);
         self.access(w);
         if !matches!(self.forest[v].parent, Parent::Root) || v == w {
             return; // already connected
         }
-        assert!(matches!(self.forest[v].left, None));
-        self.forest[v].left = Some(w);
-        self.forest[w].parent = Parent::Node(v);
-
-        // update aggregate information
-        update_max(&mut self.forest, w);
-        update_max(&mut self.forest, v);
+        self.forest[w].right = Some(v);
+        self.forest[v].parent = Parent::Node(w);
     }
 
     // Checks if v and w are connected in the forest
@@ -83,9 +76,6 @@ impl LinkCutTree {
             self.forest[left].parent = Parent::Root;
             self.forest[v].left = None;
         }
-
-        // update aggregate information
-        update_max(&mut self.forest, v);
     }
 
     // Finds the maximum weight in the path from v and its parent
@@ -110,7 +100,7 @@ mod tests {
 
     #[test]
     pub fn access_leaf() {
-        let mut tree = super::LinkCutTree::new(3);
+        let mut tree = super::LinkCutTree::new(4);
         // '1' has a path pointer to '0', '1' has a right child '2'.
         // after access(2), '2' should be the root of the tree:
         //    0             0             0               2
@@ -211,31 +201,23 @@ mod tests {
         //  / \
         // 1   2
         // link(3, 1) should result in a single tree (| denotes a path pointer):
-        //   1      3             3
-        //   |                   /
-        //   0            =>    1
-        //    \                 |
-        //     2                0
-        //                       \
-        //                        2
+        //   1      3             1
+        //   |                    |\
+        //   0            =>      0 3
+        //    \                    \
+        //     2                    2
         let mut tree = super::LinkCutTree::new(4);
         tree.forest[0].left = Some(1);
         tree.forest[0].right = Some(2);
         tree.forest[1].parent = Parent::Node(0);
         tree.forest[2].parent = Parent::Node(0);
         tree.link(3, 1);
-        assert!(matches!(tree.forest[3].parent, Parent::Root));
-        assert_eq!(tree.forest[3].left, Some(1));
-        assert_eq!(tree.forest[3].right, None);
-        assert!(matches!(tree.forest[1].parent, Parent::Node(3)));
+        assert!(matches!(tree.forest[1].parent, Parent::Root));
         assert_eq!(tree.forest[1].left, None);
-        assert_eq!(tree.forest[1].right, None);
+        assert_eq!(tree.forest[1].right, Some(3));
         assert!(matches!(tree.forest[0].parent, Parent::Path(1)));
         assert_eq!(tree.forest[0].left, None);
         assert_eq!(tree.forest[0].right, Some(2));
-        assert!(matches!(tree.forest[2].parent, Parent::Node(0)));
-        assert_eq!(tree.forest[2].left, None);
-        assert_eq!(tree.forest[2].right, None);
     }
 
     #[test]
@@ -284,29 +266,26 @@ mod tests {
         assert!(!tree.connected(0, 1)); // not connected yet
 
         tree.link(0, 1);
-        //    0
-        //   /       <= link(0, 1)
-        //  1
-        assert!(matches!(tree.forest[0].parent, Parent::Root));
-        assert_eq!(tree.forest[0].right, None);
-        assert_eq!(tree.forest[0].left, Some(1));
-        assert!(matches!(tree.forest[1].parent, Parent::Node(0)));
+        //    1
+        //     \       <= link(0, 1)
+        //      0
+        assert!(matches!(tree.forest[1].parent, Parent::Root));
+        assert_eq!(tree.forest[1].left, None);
+        assert_eq!(tree.forest[1].right, Some(0));
+        assert!(matches!(tree.forest[0].parent, Parent::Node(1)));
 
         assert!(tree.connected(0, 1)); // now connected
         assert!(matches!(tree.forest[1].parent, Parent::Root));
         assert_eq!(tree.forest[1].right, None);
         assert_eq!(tree.forest[1].left, None);
         assert!(matches!(tree.forest[0].parent, Parent::Path(1)));
-        //    0             1
-        //   /      =>      |
-        //  1               0
 
         tree.cut(0);
         assert!(matches!(tree.forest[0].parent, Parent::Root));
         assert_eq!(tree.forest[0].right, None);
-        //    0           0
-        //   /     =>
-        //  1           1
+        //    1           1
+        //     \     =>
+        //      0           0
         assert!(!tree.connected(0, 1)); // now disconnected
     }
 
@@ -327,19 +306,22 @@ mod tests {
         //   2
         tree.link(2, 3);
         // link(2, 3) should result in:
-        //        2
-        //      / |
-        //     3  1
-        //     |   \
-        //     4    0
-        assert!(matches!(tree.forest[2].parent, Parent::Root));
-        assert_eq!(tree.forest[2].left, Some(3));
-        assert_eq!(tree.forest[2].right, None);
-        assert!(matches!(tree.forest[3].parent, Parent::Node(2)));
-        assert!(matches!(tree.forest[1].parent, Parent::Path(2)));
+        //      3
+        //      | \
+        //      4  2
+        //         |
+        //         1
+        //          \
+        //           0
+        assert!(matches!(tree.forest[3].parent, Parent::Root));
         assert_eq!(tree.forest[3].left, None);
-        assert_eq!(tree.forest[3].right, None);
+        assert_eq!(tree.forest[3].right, Some(2));
         assert!(matches!(tree.forest[4].parent, Parent::Path(3)));
+        assert!(matches!(tree.forest[2].parent, Parent::Node(3)));
+        assert_eq!(tree.forest[2].left, None);
+        assert_eq!(tree.forest[2].right, None);
+        assert!(matches!(tree.forest[1].parent, Parent::Path(2)));
+        assert_eq!(tree.forest[1].left, None);
         assert_eq!(tree.forest[1].right, Some(0));
         assert!(matches!(tree.forest[0].parent, Parent::Node(1)));
         assert!(tree.connected(2, 3));
@@ -450,11 +432,20 @@ mod tests {
         assert_eq!(lctree.findmax(3), 2);
         assert_eq!(lctree.findmax(1), 0);
         assert_eq!(lctree.findmax(4), 2);
+
+        // we cut node 3 from its parent 2:
+        lctree.cut(3);
+        assert_eq!(lctree.findmax(5), 4);
+        assert_eq!(lctree.findmax(6), 3);
+        assert_eq!(lctree.findmax(4), 4);
+        assert_eq!(lctree.findmax(3), 3);
+        assert_eq!(lctree.findmax(2), 2);
+        assert_eq!(lctree.findmax(1), 0);
+        assert_eq!(lctree.findmax(0), 0);
     }
 
-    // creates a random tree with n nodes
-    fn create_random_tree(n: usize, state: u64) -> (Vec<(usize, usize)>, Vec<f64>, Vec<usize>) {
-        let mut rng = rand::rngs::StdRng::seed_from_u64(state);
+    fn create_random_tree(n: usize, seed: u64) -> (Vec<(usize, usize)>, Vec<f64>, Vec<usize>) {
+        let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
 
         let mut edges = Vec::new();
         let mut weights: Vec<f64> = (0..n).map(|i| i as f64).collect();
@@ -467,13 +458,11 @@ mod tests {
             let parent = in_tree[parent_idx];
             edges.push((i, parent));
 
-            let max_idx = if weights[i] >= weights[ground_truth[parent]] {
+            ground_truth[i] = if weights[i] > weights[ground_truth[parent]] {
                 i
             } else {
                 ground_truth[parent]
             };
-            ground_truth[i] = max_idx;
-
             in_tree.push(i);
         }
 
@@ -484,22 +473,17 @@ mod tests {
     pub fn findmax_random() {
         let n = 100;
         let seed = rand::thread_rng().gen();
-        println!("seed = {}", seed);
         let (edges, weights, ground_truth) = create_random_tree(n, seed);
         let mut lctree = super::LinkCutTree::new(n);
         for i in 0..n {
             lctree.forest[i].weight = weights[i];
         }
 
-        println!("weights: {:?}", weights);
-        println!("edges: {:?}", edges);
-        println!("ground truth: {:?}", ground_truth);
-
         for (v, w) in edges {
             lctree.link(v, w);
         }
 
-        for _ in 0..n * 10 {
+        for _ in 0..n * 100 {
             let v = rand::thread_rng().gen_range(0..n);
             assert_eq!(lctree.findmax(v), ground_truth[v]);
         }
