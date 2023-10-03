@@ -31,8 +31,8 @@ impl Node {
 
     pub fn to_str(&self) -> String {
         let parent = match self.parent {
-            Parent::Node(idx) => format!("Node({})", idx),
-            Parent::Path(idx) => format!("Path({})", idx),
+            Parent::Node(idx) => format!("Node({idx})"),
+            Parent::Path(idx) => format!("Path({idx})"),
             Parent::Root => "Root".to_string(),
         };
         format!(
