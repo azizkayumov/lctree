@@ -1,10 +1,10 @@
 use crate::node::{Node, Parent};
 
-fn rotate_left(forest: &mut Vec<Node>, node_idx: usize) {
+fn rotate_left(forest: &mut [Node], node_idx: usize) {
     // base cases:
     // - node_idx is out of bounds
     // - node_idx should have a right child
-    if node_idx >= forest.len() || forest[node_idx].right.is_none() {
+    if forest[node_idx].right.is_none() {
         return;
     }
 
@@ -25,13 +25,17 @@ fn rotate_left(forest: &mut Vec<Node>, node_idx: usize) {
     if let Some(new_right_child) = forest[node_idx].right {
         forest[new_right_child].parent = Parent::Node(node_idx);
     }
+
+    // update aggregate information
+    update_max(forest, node_idx);
+    update_max(forest, right_child);
 }
 
-fn rotate_right(forest: &mut Vec<Node>, node_idx: usize) {
+fn rotate_right(forest: &mut [Node], node_idx: usize) {
     // base cases:
     // - node_idx is out of bounds
     // - node_idx should have a left child
-    if node_idx >= forest.len() || forest[node_idx].left.is_none() {
+    if forest[node_idx].left.is_none() {
         return;
     }
 
@@ -52,10 +56,31 @@ fn rotate_right(forest: &mut Vec<Node>, node_idx: usize) {
     if let Some(new_left_child) = forest[node_idx].left {
         forest[new_left_child].parent = Parent::Node(node_idx);
     }
+
+    // update aggregate information
+    update_max(forest, node_idx);
+    update_max(forest, left_child);
+}
+
+pub fn update_max(forest: &mut [Node], node_idx: usize) {
+    let mut max_idx = node_idx;
+    if let Some(left_child) = forest[node_idx].left {
+        let left_max = forest[left_child].max_weight_idx;
+        if forest[left_max].weight > forest[max_idx].weight {
+            max_idx = left_max;
+        }
+    }
+    if let Some(right_child) = forest[node_idx].right {
+        let right_max = forest[right_child].max_weight_idx;
+        if forest[right_max].weight > forest[max_idx].weight {
+            max_idx = right_max;
+        }
+    }
+    forest[node_idx].max_weight_idx = max_idx;
 }
 
 // makes node_idx the root of its Splay tree
-pub fn splay(forest: &mut Vec<Node>, node_idx: usize) {
+pub fn splay(forest: &mut [Node], node_idx: usize) {
     assert!(node_idx < forest.len(), "splay: node_idx out of bounds");
     while let Parent::Node(parent_idx) = forest[node_idx].parent {
         if forest[parent_idx].left == Some(node_idx) {
