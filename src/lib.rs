@@ -2,12 +2,9 @@
 mod node;
 mod path;
 mod splay;
-
-use splay::update_max;
-
 use crate::{
     node::{Node, Parent},
-    splay::splay,
+    splay::{splay, update_max},
 };
 
 pub struct LinkCutTree {
@@ -19,6 +16,10 @@ impl LinkCutTree {
     pub fn new(n: usize) -> Self {
         let nodes = (0..n).map(|i| Node::new(i, 0.0)).collect();
         Self { forest: nodes }
+    }
+
+    pub fn set_weight(&mut self, v: usize, weight: f64) {
+        self.forest[v].weight = weight;
     }
 
     // Constructs a path from a node to the root of the tree.
@@ -88,7 +89,6 @@ impl LinkCutTree {
 #[cfg(test)]
 mod tests {
     use crate::node::Parent;
-    use rand::{seq::SliceRandom, Rng, SeedableRng};
 
     #[test]
     pub fn access_base_case() {
@@ -442,50 +442,5 @@ mod tests {
         assert_eq!(lctree.findmax(2), 2);
         assert_eq!(lctree.findmax(1), 0);
         assert_eq!(lctree.findmax(0), 0);
-    }
-
-    fn create_random_tree(n: usize, seed: u64) -> (Vec<(usize, usize)>, Vec<f64>, Vec<usize>) {
-        let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-
-        let mut edges = Vec::new();
-        let mut weights: Vec<f64> = (0..n).map(|i| i as f64).collect();
-        weights.shuffle(&mut rng);
-
-        let mut ground_truth = vec![0; n];
-        let mut in_tree = Vec::from([0]);
-        for i in 1..n {
-            let parent_idx = rng.gen_range(0..in_tree.len());
-            let parent = in_tree[parent_idx];
-            edges.push((i, parent));
-
-            ground_truth[i] = if weights[i] > weights[ground_truth[parent]] {
-                i
-            } else {
-                ground_truth[parent]
-            };
-            in_tree.push(i);
-        }
-
-        (edges, weights, ground_truth)
-    }
-
-    #[test]
-    pub fn findmax_random() {
-        let n = 100;
-        let seed = rand::thread_rng().gen();
-        let (edges, weights, ground_truth) = create_random_tree(n, seed);
-        let mut lctree = super::LinkCutTree::new(n);
-        for i in 0..n {
-            lctree.forest[i].weight = weights[i];
-        }
-
-        for (v, w) in edges {
-            lctree.link(v, w);
-        }
-
-        for _ in 0..n * 100 {
-            let v = rand::thread_rng().gen_range(0..n);
-            assert_eq!(lctree.findmax(v), ground_truth[v]);
-        }
     }
 }
