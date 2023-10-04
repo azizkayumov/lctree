@@ -51,7 +51,6 @@ impl LinkCutTree {
     }
 
     /// Creates a link between two nodes in the forest (v becomes the parent of w)
-    /// # Panics if v has a left child (i.e. v is not a root node)
     pub fn link(&mut self, v: usize, w: usize) {
         self.access(v);
         self.access(w);
