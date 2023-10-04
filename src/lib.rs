@@ -396,51 +396,48 @@ mod tests {
 
     #[test]
     pub fn findmax() {
-        let mut lctree = super::LinkCutTree::new(7);
-        lctree.forest[0].weight = 5.0;
+        let mut lctree = super::LinkCutTree::new(10);
+        lctree.forest[0].weight = 4.0;
         lctree.forest[1].weight = 2.0;
         lctree.forest[2].weight = 6.0;
         lctree.forest[3].weight = 3.0;
-        lctree.forest[4].weight = 4.0;
-        lctree.forest[5].weight = 0.0;
-        lctree.forest[6].weight = 1.0;
+        lctree.forest[4].weight = 9.0;
+        lctree.forest[5].weight = 5.0;
+        lctree.forest[6].weight = 0.0;
+        lctree.forest[7].weight = 7.0;
+        lctree.forest[8].weight = 1.0;
+        lctree.forest[9].weight = 8.0;
 
         // we form the following structure:
-        //           0(5)
-        //           /
-        //         1(2)
-        //         /
-        //       2(6)
-        //       /
-        //     3(3)
-        //     /  \
-        //   4(4) 6(1)
-        //  /
-        // 5(0)
-
+        //           0(4)
+        //           /  \
+        //         1(2)  5(5)
+        //        /   \    \
+        //      2(6)  3(3) 6(0)
+        //      /             \
+        //    4(9)            7(7)
+        //                    /  \
+        //                  8(1) 9(8)
         lctree.link(1, 0);
         lctree.link(2, 1);
-        lctree.link(3, 2);
-        lctree.link(4, 3);
-        lctree.link(5, 4);
-        lctree.link(6, 3);
+        lctree.link(3, 1);
+        lctree.link(4, 2);
+        lctree.link(5, 0);
+        lctree.link(6, 5);
+        lctree.link(7, 6);
+        lctree.link(8, 7);
+        lctree.link(9, 7);
 
-        assert_eq!(lctree.findmax(2), 2);
-        assert_eq!(lctree.findmax(6), 2);
+        // we check the node index with max weight in the path from each node to the root:
         assert_eq!(lctree.findmax(0), 0);
-        assert_eq!(lctree.findmax(5), 2);
-        assert_eq!(lctree.findmax(3), 2);
+        assert_eq!(lctree.findmax(5), 5);
         assert_eq!(lctree.findmax(1), 0);
-        assert_eq!(lctree.findmax(4), 2);
-
-        // we cut node 3 from its parent 2:
-        lctree.cut(3);
-        assert_eq!(lctree.findmax(5), 4);
-        assert_eq!(lctree.findmax(6), 3);
+        assert_eq!(lctree.findmax(8), 7);
+        assert_eq!(lctree.findmax(2), 2);
         assert_eq!(lctree.findmax(4), 4);
-        assert_eq!(lctree.findmax(3), 3);
-        assert_eq!(lctree.findmax(2), 2);
-        assert_eq!(lctree.findmax(1), 0);
-        assert_eq!(lctree.findmax(0), 0);
+        assert_eq!(lctree.findmax(7), 7);
+        assert_eq!(lctree.findmax(9), 9);
+        assert_eq!(lctree.findmax(3), 0);
+        assert_eq!(lctree.findmax(6), 5);
     }
 }
