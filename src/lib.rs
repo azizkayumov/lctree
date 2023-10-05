@@ -57,8 +57,7 @@ impl LinkCutTree {
         if !matches!(self.forest[v].parent, Parent::Root) || v == w {
             return; // already connected
         }
-        // assert_eq!(self.forest[v].left, None);
-        self.forest[v].left = Some(w);
+        self.forest[v].left = Some(w); // v is the root of its represented tree, so no need to check if it has a left child
         self.forest[w].parent = Parent::Node(v);
     }
 

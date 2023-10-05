@@ -68,14 +68,14 @@ enum Operation {
 }
 
 #[test]
-pub fn test_connectivity() {
+pub fn connectivity() {
     let mut rng = create_random_generator();
     let edges = create_random_tree(&mut rng);
 
     // initialize link-cut tree, we start with a forest of single nodes
     // (edges are not added yet):
     let mut lctree = LinkCutTree::new(NUMBER_OF_NODES);
-    let mut edges_in_tree = HashSet::new();
+    let mut edges_in_forest = HashSet::new();
     let mut component_ids = (0..NUMBER_OF_NODES).collect::<Vec<usize>>();
 
     // perform random operations: link, cut, or connected:
@@ -87,19 +87,19 @@ pub fn test_connectivity() {
                 println!("Link {} {}", v, w);
                 lctree.link(*v, *w);
 
-                edges_in_tree.insert((*v, *w));
-                component_ids = connected_components(&edges_in_tree);
+                edges_in_forest.insert((*v, *w));
+                component_ids = connected_components(&edges_in_forest);
             }
             Operation::Cut => {
-                if edges_in_tree.is_empty() {
+                if edges_in_forest.is_empty() {
                     continue;
                 }
-                let (v, w) = edges_in_tree.iter().choose(&mut rng).unwrap();
+                let (v, w) = edges_in_forest.iter().choose(&mut rng).unwrap();
                 println!("Cut {} {}", v, w);
                 lctree.cut(*v);
 
-                edges_in_tree.remove(&(*v, *w));
-                component_ids = connected_components(&edges_in_tree);
+                edges_in_forest.remove(&(*v, *w));
+                component_ids = connected_components(&edges_in_forest);
             }
             Operation::Connected => {
                 let v = rng.gen_range(0..NUMBER_OF_NODES);
