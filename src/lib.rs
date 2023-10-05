@@ -50,15 +50,16 @@ impl LinkCutTree {
         update_max(&mut self.forest, v);
     }
 
-    /// Creates a link between two nodes in the forest (v becomes the parent of w)
+    /// Creates a link between two nodes in the forest (where w is the parent of v)
     pub fn link(&mut self, v: usize, w: usize) {
         self.access(v);
         self.access(w);
         if !matches!(self.forest[v].parent, Parent::Root) || v == w {
             return; // already connected
         }
-        self.forest[w].right = Some(v);
-        self.forest[v].parent = Parent::Node(w);
+        // assert_eq!(self.forest[v].left, None);
+        self.forest[v].left = Some(w);
+        self.forest[w].parent = Parent::Node(v);
     }
 
     // Checks if v and w are connected in the forest
@@ -200,9 +201,11 @@ mod tests {
         //  / \
         // 1   2
         // link(3, 1) should result in a single tree (| denotes a path pointer):
+        //                          3
+        //                         /
         //   1      3             1
-        //   |                    |\
-        //   0            =>      0 3
+        //   |                    |
+        //   0            =>      0
         //    \                    \
         //     2                    2
         let mut tree = super::LinkCutTree::new(4);
@@ -211,9 +214,9 @@ mod tests {
         tree.forest[1].parent = Parent::Node(0);
         tree.forest[2].parent = Parent::Node(0);
         tree.link(3, 1);
-        assert!(matches!(tree.forest[1].parent, Parent::Root));
-        assert_eq!(tree.forest[1].left, None);
-        assert_eq!(tree.forest[1].right, Some(3));
+        assert!(matches!(tree.forest[3].parent, Parent::Root));
+        assert_eq!(tree.forest[3].left, Some(1));
+        assert!(matches!(tree.forest[1].parent, Parent::Node(3)));
         assert!(matches!(tree.forest[0].parent, Parent::Path(1)));
         assert_eq!(tree.forest[0].left, None);
         assert_eq!(tree.forest[0].right, Some(2));
@@ -265,13 +268,13 @@ mod tests {
         assert!(!tree.connected(0, 1)); // not connected yet
 
         tree.link(0, 1);
-        //    1
-        //     \       <= link(0, 1)
-        //      0
-        assert!(matches!(tree.forest[1].parent, Parent::Root));
-        assert_eq!(tree.forest[1].left, None);
-        assert_eq!(tree.forest[1].right, Some(0));
-        assert!(matches!(tree.forest[0].parent, Parent::Node(1)));
+        //     0
+        //    /       <= link(0, 1)
+        //   1
+        assert!(matches!(tree.forest[0].parent, Parent::Root));
+        assert_eq!(tree.forest[0].left, Some(1));
+        assert_eq!(tree.forest[1].right, None);
+        assert!(matches!(tree.forest[1].parent, Parent::Node(0)));
 
         assert!(tree.connected(0, 1)); // now connected
         assert!(matches!(tree.forest[1].parent, Parent::Root));
@@ -280,11 +283,11 @@ mod tests {
         assert!(matches!(tree.forest[0].parent, Parent::Path(1)));
 
         tree.cut(0);
-        assert!(matches!(tree.forest[0].parent, Parent::Root));
-        assert_eq!(tree.forest[0].right, None);
-        //    1           1
-        //     \     =>
-        //      0           0
+        assert!(matches!(tree.forest[1].parent, Parent::Root));
+        assert_eq!(tree.forest[1].right, None);
+        //     0            0
+        //    /     =>
+        //   1            1
         assert!(!tree.connected(0, 1)); // now disconnected
     }
 
@@ -305,25 +308,20 @@ mod tests {
         //   2
         tree.link(2, 3);
         // link(2, 3) should result in:
-        //      3
-        //      | \
-        //      4  2
-        //         |
-        //         1
-        //          \
-        //           0
-        assert!(matches!(tree.forest[3].parent, Parent::Root));
-        assert_eq!(tree.forest[3].left, None);
-        assert_eq!(tree.forest[3].right, Some(2));
-        assert!(matches!(tree.forest[4].parent, Parent::Path(3)));
-        assert!(matches!(tree.forest[2].parent, Parent::Node(3)));
-        assert_eq!(tree.forest[2].left, None);
+        //      2
+        //     / |
+        //    3  1
+        //    |   \
+        //    4    0
+        //
+        assert!(matches!(tree.forest[2].parent, Parent::Root));
+        assert_eq!(tree.forest[2].left, Some(3));
         assert_eq!(tree.forest[2].right, None);
-        assert!(matches!(tree.forest[1].parent, Parent::Path(2)));
-        assert_eq!(tree.forest[1].left, None);
         assert_eq!(tree.forest[1].right, Some(0));
-        assert!(matches!(tree.forest[0].parent, Parent::Node(1)));
-        assert!(tree.connected(2, 3));
+        assert!(matches!(tree.forest[3].parent, Parent::Node(2)));
+        assert_eq!(tree.forest[3].left, None);
+        assert_eq!(tree.forest[3].right, None);
+        assert!(matches!(tree.forest[4].parent, Parent::Path(3)));
 
         // we cut node 2 from its parent 3:
         tree.cut(2);
