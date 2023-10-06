@@ -41,3 +41,20 @@ impl Path for FindSum {
         self.sum += other.weight;
     }
 }
+
+pub fn update_max(forest: &mut [Node], node_idx: usize) {
+    let mut max_idx = node_idx;
+    if let Some(left_child) = forest[node_idx].left {
+        let left_max = forest[left_child].max_weight_idx;
+        if forest[left_max].weight > forest[max_idx].weight {
+            max_idx = left_max;
+        }
+    }
+    if let Some(right_child) = forest[node_idx].right {
+        let right_max = forest[right_child].max_weight_idx;
+        if forest[right_max].weight > forest[max_idx].weight {
+            max_idx = right_max;
+        }
+    }
+    forest[node_idx].max_weight_idx = max_idx;
+}
