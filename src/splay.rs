@@ -1,4 +1,7 @@
-use crate::{node::{Node, Parent}, path::update_max};
+use crate::{
+    node::{Node, Parent},
+    path::update_max,
+};
 
 /// Rotates the subtree rooted at `node_idx` to the left:
 ///
@@ -119,8 +122,6 @@ fn rotate(forest: &mut [Node], node_idx: usize) {
 ///    /
 ///   2
 pub fn splay(forest: &mut [Node], node_idx: usize) {
-    assert!(node_idx < forest.len(), "splay: node_idx out of bounds");
-
     while let Parent::Node(parent_idx) = forest[node_idx].parent {
         if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
             if (forest[grandparent_idx].left == Some(parent_idx))
