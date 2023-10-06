@@ -2,9 +2,11 @@
 mod node;
 mod path;
 mod splay;
+use path::update_max;
+
 use crate::{
     node::{Node, Parent},
-    splay::{splay, update_max},
+    splay::splay,
 };
 
 pub struct LinkCutTree {
