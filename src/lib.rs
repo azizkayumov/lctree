@@ -22,7 +22,7 @@ impl LinkCutTree {
         self.forest[v].weight = weight;
     }
 
-    // Constructs a path from a node to the root of the tree.
+    /// Constructs a path from a node to the root of the tree.
     pub fn access(&mut self, v: usize) {
         splay(&mut self.forest, v);
 
@@ -50,7 +50,7 @@ impl LinkCutTree {
         update_max(&mut self.forest, v);
     }
 
-    /// Creates a link between two nodes in the forest (where w is the parent of v)
+    /// Creates a link between two nodes in the forest (where w is the parent of v).
     pub fn link(&mut self, v: usize, w: usize) {
         self.access(v);
         self.access(w);
@@ -61,7 +61,7 @@ impl LinkCutTree {
         self.forest[w].parent = Parent::Node(v);
     }
 
-    // Checks if v and w are connected in the forest
+    /// Checks if v and w are connected in the forest.
     pub fn connected(&mut self, v: usize, w: usize) -> bool {
         self.access(v); // v is now the root of the tree
         self.access(w);
@@ -69,7 +69,7 @@ impl LinkCutTree {
         !matches!(self.forest[v].parent, Parent::Root) || v == w
     }
 
-    // Cuts the link between v and its parent.
+    /// Cuts the link between v and its parent.
     pub fn cut(&mut self, v: usize) {
         self.access(v);
         if let Some(left) = self.forest[v].left {
@@ -78,10 +78,20 @@ impl LinkCutTree {
         }
     }
 
-    // Finds the maximum weight in the path from v and its parent
+    /// Finds the maximum weight in the path from v and the root of the tree that v is in.
     pub fn findmax(&mut self, v: usize) -> usize {
         self.access(v);
         self.forest[v].max_weight_idx
+    }
+
+    /// Finds the root of the tree that v is in.
+    pub fn findroot(&mut self, v: usize) -> usize {
+        self.access(v);
+        let mut root = v;
+        while let Some(left) = self.forest[root].left {
+            root = left;
+        }
+        root
     }
 }
 
@@ -306,13 +316,12 @@ mod tests {
         //    /
         //   2
         tree.link(2, 3);
-        // link(2, 3) should result in:
+        // link(2, 3) should now result in:
         //      2
         //     / |
         //    3  1
         //    |   \
         //    4    0
-        //
         assert!(matches!(tree.forest[2].parent, Parent::Root));
         assert_eq!(tree.forest[2].left, Some(3));
         assert_eq!(tree.forest[2].right, None);
@@ -322,7 +331,7 @@ mod tests {
         assert_eq!(tree.forest[3].right, None);
         assert!(matches!(tree.forest[4].parent, Parent::Path(3)));
 
-        // we cut node 2 from its parent 3:
+        // We cut node 2 from its parent 3:
         tree.cut(2);
         assert!(!tree.connected(2, 3));
         assert!(!tree.connected(2, 4));
@@ -351,17 +360,17 @@ mod tests {
         lctree.link(8, 7);
         lctree.link(9, 8);
 
-        // checking connectivity:
+        // Checking connectivity:
         for i in 0..10 {
             for j in 0..10 {
                 assert!(lctree.connected(i, j));
             }
         }
 
-        // we cut node 6 from its parent 0:
+        // We cut node 6 from its parent 0:
         lctree.cut(6);
 
-        // the forest should now look like this:
+        // The forest should now look like this:
         //         0
         //        /
         //       1        6
@@ -372,7 +381,7 @@ mod tests {
         //                   /
         //                  9
 
-        // we check connectivity again for the two trees:
+        // We check connectivity again for the two trees:
         for i in 0..6 {
             for j in 0..6 {
                 assert!(lctree.connected(i, j));
@@ -404,7 +413,8 @@ mod tests {
         lctree.forest[8].weight = 1.0;
         lctree.forest[9].weight = 8.0;
 
-        // we form the following structure:
+        // We form a link-cut tree from a rooted tree with the following structure
+        // (the numbers in parentheses are the weights of the nodes):
         //           0(4)
         //           /  \
         //         1(2)  5(5)
@@ -424,7 +434,7 @@ mod tests {
         lctree.link(8, 7);
         lctree.link(9, 7);
 
-        // we check the node index with max weight in the path from each node to the root:
+        // We check the node index with max weight in the path from each node to the root:
         assert_eq!(lctree.findmax(0), 0);
         assert_eq!(lctree.findmax(5), 5);
         assert_eq!(lctree.findmax(1), 0);
@@ -435,5 +445,57 @@ mod tests {
         assert_eq!(lctree.findmax(9), 9);
         assert_eq!(lctree.findmax(3), 0);
         assert_eq!(lctree.findmax(6), 5);
+    }
+
+    #[test]
+    pub fn findroot() {
+        // We form a link-cut tree from a rooted tree with the following structure:
+        //     0
+        //    / \
+        //   1   6
+        //  / \   \
+        // 2   3   7
+        //    / \   \
+        //   4   5   8
+        //          /
+        //         9
+        let mut lctree = super::LinkCutTree::new(10);
+        lctree.link(1, 0);
+        lctree.link(2, 1);
+        lctree.link(3, 1);
+        lctree.link(4, 3);
+        lctree.link(5, 3);
+        lctree.link(6, 0);
+        lctree.link(7, 6);
+        lctree.link(8, 7);
+        lctree.link(9, 8);
+
+        // Checking findroot:
+        for i in 0..10 {
+            assert_eq!(lctree.findroot(i), 0);
+        }
+
+        // We cut node 6 from its parent 0:
+        lctree.cut(6);
+
+        // the forest should now look like this:
+        //         0
+        //        /
+        //       1        6
+        //      / \        \
+        //     2   3        7
+        //        / \        \
+        //       4   5        8
+        //                   /
+        //                  9
+
+        // We check findroot again for the two trees:
+        for i in 0..6 {
+            assert_eq!(lctree.findroot(i), 0);
+        }
+
+        for i in 6..10 {
+            assert_eq!(lctree.findroot(i), 6);
+        }
     }
 }

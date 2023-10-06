@@ -69,6 +69,7 @@ enum Operation {
 
 #[test]
 pub fn connectivity() {
+    let now = std::time::Instant::now();
     let mut rng = create_random_generator();
     let edges = create_random_tree(&mut rng);
 
@@ -109,4 +110,5 @@ pub fn connectivity() {
             }
         }
     }
+    println!("Time: {}ms", now.elapsed().as_millis()); // Time: 40ms
 }
