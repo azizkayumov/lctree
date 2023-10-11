@@ -3,6 +3,7 @@ mod node;
 mod path;
 mod splay;
 use path::update_max;
+use splay::unflip;
 
 use crate::{
     node::{Node, Parent},
@@ -52,6 +53,13 @@ impl LinkCutTree {
         update_max(&mut self.forest, v);
     }
 
+    /// Makes v the root of the tree by flipping the path from v to the root.
+    pub fn reroot(&mut self, v: usize) {
+        self.access(v);
+        self.forest[v].flipped = !self.forest[v].flipped;
+        unflip(&mut self.forest, v);
+    }
+
     /// Creates a link between two nodes in the forest (where w is the parent of v).
     pub fn link(&mut self, v: usize, w: usize) {
         self.access(v);
@@ -93,6 +101,7 @@ impl LinkCutTree {
         while let Some(left) = self.forest[root].left {
             root = left;
         }
+        splay(&mut self.forest, root);
         root
     }
 }
@@ -498,6 +507,33 @@ mod tests {
 
         for i in 6..10 {
             assert_eq!(lctree.findroot(i), 6);
+        }
+    }
+
+    #[test]
+    pub fn reroot() {
+        // We form a link-cut tree from a rooted tree with the following structure:
+        //     0
+        //    / \
+        //   1   4
+        //  / \   
+        // 2   3    
+        let mut lctree = super::LinkCutTree::new(10);
+        lctree.link(1, 0);
+        lctree.link(2, 1);
+        lctree.link(3, 1);
+        lctree.link(4, 0);
+
+        // Checking findroot (which should be 0 for all nodes):
+        for i in 0..5 {
+            assert_eq!(lctree.findroot(i), 0);
+        }
+        
+        // we make 1 the root of the tree:
+        lctree.reroot(1);
+
+        for i in 0..5 {
+            assert_eq!(lctree.findroot(i), 1);
         }
     }
 }
