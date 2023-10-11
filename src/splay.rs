@@ -124,11 +124,12 @@ fn rotate(forest: &mut [Node], node_idx: usize) {
 pub fn splay(forest: &mut [Node], node_idx: usize) {
     while let Parent::Node(parent_idx) = forest[node_idx].parent {
         if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
-            
             unflip(forest, grandparent_idx);
-            unflip(forest, parent_idx);
-            unflip(forest, node_idx);
+        }
+        unflip(forest, parent_idx);
+        unflip(forest, node_idx);
 
+        if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
             if (forest[grandparent_idx].left == Some(parent_idx))
                 == (forest[parent_idx].left == Some(node_idx))
             {
@@ -141,14 +142,14 @@ pub fn splay(forest: &mut [Node], node_idx: usize) {
                 rotate(forest, node_idx);
             }
         } else {
-            unflip(forest, parent_idx);
-            unflip(forest, node_idx);
             // zig
             rotate(forest, node_idx);
         }
     }
 }
 
+/// Unflips the subtree rooted at `node_idx`, swapping the left and right children.
+/// The children's `flipped` flag is also toggled to propogate the change down the tree.
 pub fn unflip(forest: &mut [Node], node_idx: usize) {
     if forest[node_idx].flipped {
         forest[node_idx].flipped = false;
