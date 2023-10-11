@@ -9,17 +9,6 @@ fn create_random_generator() -> StdRng {
     StdRng::seed_from_u64(seed)
 }
 
-fn create_random_tree(rng: &mut StdRng) -> Vec<(usize, usize)> {
-    let mut nodes = Vec::from([0]);
-    let mut edges = Vec::new();
-    for i in 1..NUMBER_OF_NODES {
-        let parent = nodes[rng.gen_range(0..i)];
-        nodes.push(i);
-        edges.push((i, parent));
-    }
-    edges
-}
-
 fn dfs(
     v: usize,
     adj: &Vec<Vec<usize>>,
@@ -47,18 +36,16 @@ fn connected_components(edges: &HashSet<(usize, usize)>) -> Vec<usize> {
     // explore each component using dfs and assign component ids
     let mut visited = vec![false; NUMBER_OF_NODES];
     let mut component_ids = vec![0; NUMBER_OF_NODES];
-    let mut component_id = 0;
     for v in 0..NUMBER_OF_NODES {
         if !visited[v] {
-            component_id += 1;
-            dfs(v, &adj, &mut visited, &mut component_ids, component_id);
+            dfs(v, &adj, &mut visited, &mut component_ids, v);
         }
     }
     component_ids
 }
 
 const NUMBER_OF_NODES: usize = 100;
-const NUMBER_OF_OPERATIONS: usize = 1000;
+const NUMBER_OF_OPERATIONS: usize = 2000;
 
 #[derive(RandGen)]
 enum Operation {
@@ -71,12 +58,11 @@ enum Operation {
 pub fn connectivity() {
     let now = std::time::Instant::now();
     let mut rng = create_random_generator();
-    let edges = create_random_tree(&mut rng);
+    let mut edges = HashSet::new();
 
     // initialize link-cut tree, we start with a forest of single nodes
     // (edges are not added yet):
     let mut lctree = LinkCutTree::new(NUMBER_OF_NODES);
-    let mut edges_in_forest = HashSet::new();
     let mut component_ids = (0..NUMBER_OF_NODES).collect::<Vec<usize>>();
 
     // perform random operations: link, cut, or connected:
@@ -84,28 +70,30 @@ pub fn connectivity() {
         let operation: Operation = rng.gen();
         match operation {
             Operation::Link => {
-                let (v, w) = edges.iter().choose(&mut rng).unwrap();
-                println!("Link {} {}", v, w);
-                lctree.link(*v, *w);
+                let v = rng.gen_range(0..NUMBER_OF_NODES);
+                let w = rng.gen_range(0..NUMBER_OF_NODES);
+                lctree.link(v, w); // ignores if v and w are already connected
 
-                edges_in_forest.insert((*v, *w));
-                component_ids = connected_components(&edges_in_forest);
+                // We only add the edge if it connects two different trees,
+                // we don't want to create cycles:
+                if component_ids[v] != component_ids[w] {
+                    edges.insert((v, w));
+                    component_ids = connected_components(&edges);
+                }
             }
             Operation::Cut => {
-                if edges_in_forest.is_empty() {
+                if edges.is_empty() {
                     continue;
                 }
-                let (v, w) = edges_in_forest.iter().choose(&mut rng).unwrap();
-                println!("Cut {} {}", v, w);
-                lctree.cut(*v);
+                let (v, w) = edges.iter().choose(&mut rng).unwrap();
+                lctree.cut(*v, *w);
 
-                edges_in_forest.remove(&(*v, *w));
-                component_ids = connected_components(&edges_in_forest);
+                edges.remove(&(*v, *w));
+                component_ids = connected_components(&edges);
             }
             Operation::Connected => {
                 let v = rng.gen_range(0..NUMBER_OF_NODES);
                 let w = rng.gen_range(0..NUMBER_OF_NODES);
-                println!("Connected {} {}", v, w);
                 assert_eq!(lctree.connected(v, w), component_ids[v] == component_ids[w]);
             }
         }
