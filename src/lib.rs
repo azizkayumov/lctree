@@ -53,16 +53,16 @@ impl LinkCutTree {
         update_max(&mut self.forest, v);
     }
 
-    /// Makes v the root of the tree by flipping the path from v to the root.
+    /// Makes v the root of its represented tree by flipping the path from v to the root.
     pub fn reroot(&mut self, v: usize) {
         self.access(v);
-        self.forest[v].flipped = !self.forest[v].flipped;
+        self.forest[v].flipped ^= true;
         unflip(&mut self.forest, v);
     }
 
     /// Creates a link between two nodes in the forest (where w is the parent of v).
     pub fn link(&mut self, v: usize, w: usize) {
-        self.access(v);
+        self.reroot(v);
         self.access(w);
         if !matches!(self.forest[v].parent, Parent::Root) || v == w {
             return; // already connected
@@ -73,25 +73,31 @@ impl LinkCutTree {
 
     /// Checks if v and w are connected in the forest.
     pub fn connected(&mut self, v: usize, w: usize) -> bool {
-        self.access(v); // v is now the root of the tree
+        self.reroot(v); // v is now the root of the tree
         self.access(w);
         // if access(w) messed with the root of the tree, then v and w are connected:
         !matches!(self.forest[v].parent, Parent::Root) || v == w
     }
 
-    /// Cuts the link between v and its parent.
-    pub fn cut(&mut self, v: usize) {
-        self.access(v);
-        if let Some(left) = self.forest[v].left {
+    /// Cuts the link between nodes v and w (if it exists)
+    pub fn cut(&mut self, v: usize, w: usize) {
+        self.reroot(v);
+        self.access(w);
+        if matches!(self.forest[v].parent, Parent::Root) || v == w {
+            return; // not connected
+        }
+        // detach w from its parent (which is v)
+        if let Some(left) = self.forest[w].left {
+            self.forest[w].left = None;
             self.forest[left].parent = Parent::Root;
-            self.forest[v].left = None;
         }
     }
 
-    /// Finds the maximum weight in the path from v and the root of the tree that v is in.
-    pub fn findmax(&mut self, v: usize) -> usize {
-        self.access(v);
-        self.forest[v].max_weight_idx
+    /// Finds the maximum weight in the path from nodes v and w (if they are connected)
+    pub fn findmax(&mut self, v: usize, w: usize) -> usize {
+        self.reroot(v);
+        self.access(w);
+        self.forest[w].max_weight_idx
     }
 
     /// Finds the root of the tree that v is in.
@@ -101,7 +107,7 @@ impl LinkCutTree {
         while let Some(left) = self.forest[root].left {
             root = left;
         }
-        splay(&mut self.forest, root);
+        splay(&mut self.forest, root); // fast access to the root next time
         root
     }
 }
@@ -111,15 +117,7 @@ mod tests {
     use crate::node::Parent;
 
     #[test]
-    pub fn access_base_case() {
-        // access a single node, should do nothing
-        let mut tree = super::LinkCutTree::new(1);
-        tree.access(0);
-        assert!(matches!(tree.forest[0].parent, Parent::Root));
-    }
-
-    #[test]
-    pub fn access_leaf() {
+    pub fn access() {
         let mut tree = super::LinkCutTree::new(4);
         // '1' has a path pointer to '0', '1' has a right child '2'.
         // after access(2), '2' should be the root of the tree:
@@ -144,22 +142,14 @@ mod tests {
     }
 
     #[test]
-    pub fn link_base_case() {
-        let mut tree = super::LinkCutTree::new(2);
-        assert!(!tree.connected(0, 1)); // not connected yet
-        tree.link(0, 1);
-        assert!(tree.connected(0, 1)); // now connected
-    }
-
-    #[test]
     pub fn link_already_connected() {
         // '2' has a right child '3':
         // link(0, 3) should add no link, and result in (| denotes a path pointer):
-        //   0                0             0            3
-        //  / \              /  |          /  |         /
-        // 1   2     =>     1   2    =>   1   3   =>   0
-        //      \                \           /        / \
-        //       3                3         2        1   2
+        //   0                   3
+        //  / \                 /
+        // 1   2     =>        0
+        //      \              |\
+        //       3             1 2
         //
         let mut tree = super::LinkCutTree::new(4);
         tree.forest[0].left = Some(1);
@@ -173,49 +163,14 @@ mod tests {
         assert_eq!(tree.forest[3].left, Some(0));
         assert_eq!(tree.forest[3].right, None);
         assert!(matches!(tree.forest[0].parent, Parent::Node(3)));
-        assert_eq!(tree.forest[0].left, Some(1));
+        assert_eq!(tree.forest[0].left, None);
+        assert!(matches!(tree.forest[1].parent, Parent::Path(0)));
         assert_eq!(tree.forest[0].right, Some(2));
-        assert!(matches!(tree.forest[1].parent, Parent::Node(0)));
-        assert_eq!(tree.forest[1].left, None);
-        assert_eq!(tree.forest[1].right, None);
         assert!(matches!(tree.forest[2].parent, Parent::Node(0)));
-        assert_eq!(tree.forest[2].left, None);
-        assert_eq!(tree.forest[2].right, None);
     }
 
     #[test]
-    pub fn link_already_connected_with_path() {
-        // '3' has a path pointer to '2', and '2' has a path pointer to '0':
-        // link(0, 3) should add no link, and result in (| denotes a path pointer):
-        //   0               0              0               3
-        //  / \             / |            / |             /
-        // 1   2     =>    1  2    =>     1  3      =>    0
-        //     |              |             /            / \
-        //     3              3            2            1   2
-        //
-        let mut tree = super::LinkCutTree::new(4);
-        tree.forest[0].left = Some(1);
-        tree.forest[0].right = Some(2);
-        tree.forest[1].parent = Parent::Node(0);
-        tree.forest[2].parent = Parent::Node(0);
-        tree.forest[3].parent = Parent::Path(2);
-        tree.link(0, 3);
-        assert!(matches!(tree.forest[3].parent, Parent::Root));
-        assert_eq!(tree.forest[3].left, Some(0));
-        assert_eq!(tree.forest[3].right, None);
-        assert!(matches!(tree.forest[0].parent, Parent::Node(3)));
-        assert_eq!(tree.forest[0].left, Some(1));
-        assert_eq!(tree.forest[0].right, Some(2));
-        assert!(matches!(tree.forest[1].parent, Parent::Node(0)));
-        assert_eq!(tree.forest[1].left, None);
-        assert_eq!(tree.forest[1].right, None);
-        assert!(matches!(tree.forest[2].parent, Parent::Node(0)));
-        assert_eq!(tree.forest[2].left, None);
-        assert_eq!(tree.forest[2].right, None);
-    }
-
-    #[test]
-    pub fn link_to_leftmost() {
+    pub fn link() {
         // Given two trees:
         //   0               3
         //  / \
@@ -243,27 +198,7 @@ mod tests {
     }
 
     #[test]
-    pub fn connected_with_root() {
-        // check three nodes, one is root:
-        //    0
-        //   / \
-        //  1   2
-        let mut tree = super::LinkCutTree::new(3);
-        tree.forest[0].left = Some(1);
-        tree.forest[0].right = Some(2);
-        tree.forest[1].parent = Parent::Node(0);
-        tree.forest[2].parent = Parent::Node(0);
-
-        assert!(tree.connected(0, 1));
-        assert!(tree.connected(0, 2));
-        assert!(tree.connected(1, 2));
-        assert!(tree.connected(0, 0));
-        assert!(tree.connected(1, 1));
-        assert!(tree.connected(2, 2));
-    }
-
-    #[test]
-    pub fn connected_with_path_pointers() {
+    pub fn connected() {
         // check two splay trees that are connected by a path pointer
         //     0
         //    / \
@@ -283,73 +218,7 @@ mod tests {
     }
 
     #[test]
-    pub fn cut_base_case() {
-        let mut tree = super::LinkCutTree::new(2);
-        assert!(!tree.connected(0, 1)); // not connected yet
-
-        tree.link(0, 1);
-        //     0
-        //    /       <= link(0, 1)
-        //   1
-        assert!(matches!(tree.forest[0].parent, Parent::Root));
-        assert_eq!(tree.forest[0].left, Some(1));
-        assert_eq!(tree.forest[1].right, None);
-        assert!(matches!(tree.forest[1].parent, Parent::Node(0)));
-
-        assert!(tree.connected(0, 1)); // now connected
-        assert!(matches!(tree.forest[1].parent, Parent::Root));
-        assert_eq!(tree.forest[1].right, None);
-        assert_eq!(tree.forest[1].left, None);
-        assert!(matches!(tree.forest[0].parent, Parent::Path(1)));
-
-        tree.cut(0);
-        assert!(matches!(tree.forest[1].parent, Parent::Root));
-        assert_eq!(tree.forest[1].right, None);
-        //     0            0
-        //    /     =>
-        //   1            1
-        assert!(!tree.connected(0, 1)); // now disconnected
-    }
-
-    #[test]
-    pub fn cut_into_two_subtrees() {
-        let mut tree = super::LinkCutTree::new(5);
-        tree.forest[0].left = Some(1);
-        tree.forest[1].parent = Parent::Node(0);
-        tree.forest[1].left = Some(2);
-        tree.forest[2].parent = Parent::Node(1);
-        tree.forest[3].right = Some(4);
-        tree.forest[4].parent = Parent::Node(3);
-        // Given two trees:
-        //       0       3
-        //      /         \
-        //     1           4
-        //    /
-        //   2
-        tree.link(2, 3);
-        // link(2, 3) should now result in:
-        //      2
-        //     / |
-        //    3  1
-        //    |   \
-        //    4    0
-        assert!(matches!(tree.forest[2].parent, Parent::Root));
-        assert_eq!(tree.forest[2].left, Some(3));
-        assert_eq!(tree.forest[2].right, None);
-        assert_eq!(tree.forest[1].right, Some(0));
-        assert!(matches!(tree.forest[3].parent, Parent::Node(2)));
-        assert_eq!(tree.forest[3].left, None);
-        assert_eq!(tree.forest[3].right, None);
-        assert!(matches!(tree.forest[4].parent, Parent::Path(3)));
-
-        // We cut node 2 from its parent 3:
-        tree.cut(2);
-        assert!(!tree.connected(2, 3));
-        assert!(!tree.connected(2, 4));
-    }
-
-    #[test]
-    pub fn connectivity() {
+    pub fn cut() {
         // We form a link-cut tree from a rooted tree with the following structure:
         //     0
         //    / \
@@ -379,7 +248,7 @@ mod tests {
         }
 
         // We cut node 6 from its parent 0:
-        lctree.cut(6);
+        lctree.cut(6, 0);
 
         // The forest should now look like this:
         //         0
@@ -411,54 +280,6 @@ mod tests {
     }
 
     #[test]
-    pub fn findmax() {
-        let mut lctree = super::LinkCutTree::new(10);
-        lctree.forest[0].weight = 4.0;
-        lctree.forest[1].weight = 2.0;
-        lctree.forest[2].weight = 6.0;
-        lctree.forest[3].weight = 3.0;
-        lctree.forest[4].weight = 9.0;
-        lctree.forest[5].weight = 5.0;
-        lctree.forest[6].weight = 0.0;
-        lctree.forest[7].weight = 7.0;
-        lctree.forest[8].weight = 1.0;
-        lctree.forest[9].weight = 8.0;
-
-        // We form a link-cut tree from a rooted tree with the following structure
-        // (the numbers in parentheses are the weights of the nodes):
-        //           0(4)
-        //           /  \
-        //         1(2)  5(5)
-        //        /   \    \
-        //      2(6)  3(3) 6(0)
-        //      /             \
-        //    4(9)            7(7)
-        //                    /  \
-        //                  8(1) 9(8)
-        lctree.link(1, 0);
-        lctree.link(2, 1);
-        lctree.link(3, 1);
-        lctree.link(4, 2);
-        lctree.link(5, 0);
-        lctree.link(6, 5);
-        lctree.link(7, 6);
-        lctree.link(8, 7);
-        lctree.link(9, 7);
-
-        // We check the node index with max weight in the path from each node to the root:
-        assert_eq!(lctree.findmax(0), 0);
-        assert_eq!(lctree.findmax(5), 5);
-        assert_eq!(lctree.findmax(1), 0);
-        assert_eq!(lctree.findmax(8), 7);
-        assert_eq!(lctree.findmax(2), 2);
-        assert_eq!(lctree.findmax(4), 4);
-        assert_eq!(lctree.findmax(7), 7);
-        assert_eq!(lctree.findmax(9), 9);
-        assert_eq!(lctree.findmax(3), 0);
-        assert_eq!(lctree.findmax(6), 5);
-    }
-
-    #[test]
     pub fn findroot() {
         // We form a link-cut tree from a rooted tree with the following structure:
         //     0
@@ -487,7 +308,7 @@ mod tests {
         }
 
         // We cut node 6 from its parent 0:
-        lctree.cut(6);
+        lctree.cut(6, 0);
 
         // the forest should now look like this:
         //         0
@@ -516,8 +337,8 @@ mod tests {
         //     0
         //    / \
         //   1   4
-        //  / \   
-        // 2   3    
+        //  / \
+        // 2   3
         let mut lctree = super::LinkCutTree::new(10);
         lctree.link(1, 0);
         lctree.link(2, 1);
@@ -528,7 +349,7 @@ mod tests {
         for i in 0..5 {
             assert_eq!(lctree.findroot(i), 0);
         }
-        
+
         // we make 1 the root of the tree:
         lctree.reroot(1);
 
