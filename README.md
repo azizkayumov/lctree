@@ -2,7 +2,7 @@
 [![crates.io](https://img.shields.io/crates/v/lctree)](https://crates.io/crates/lctree)
 
 # lctree
-Rust implementation of [Link-Cut-Tree](https://dl.acm.org/doi/10.1145/253262.253347](https://dl.acm.org/doi/pdf/10.1145/800076.802464)): self-balancing data structure to maintain a forest of rooted trees.
+Rust implementation of [Link-Cut-Tree](https://dl.acm.org/doi/10.1145/253262.253347](https://dl.acm.org/doi/pdf/10.1145/800076.802464)): self-balancing data structure to maintain a forest of rooted trees through linking and cutting edges.
 
 ## Example
 This example shows how to link and cut edges:
@@ -18,7 +18,7 @@ fn main() {
     // 2   3   5
     //        /
     //       6
-    let mut lctree = super::LinkCutTree::new(7);
+    let mut lctree = lctree::LinkCutTree::new(7);
     lctree.link(1, 0);
     lctree.link(2, 1);
     lctree.link(3, 1);
