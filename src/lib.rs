@@ -14,15 +14,22 @@ pub struct LinkCutTree {
     forest: Vec<Node>,
 }
 
+impl Default for LinkCutTree {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LinkCutTree {
     #[must_use]
-    pub fn new(n: usize) -> Self {
-        let nodes = (0..n).map(|i| Node::new(i, 0.0)).collect();
-        Self { forest: nodes }
+    pub fn new() -> Self {
+        Self { forest: Vec::new() }
     }
 
-    pub fn set_weight(&mut self, v: usize, weight: f64) {
-        self.forest[v].weight = weight;
+    pub fn make_tree(&mut self, weight: f64) -> usize {
+        let idx = self.forest.len();
+        self.forest.push(Node::new(idx, weight));
+        idx
     }
 
     /// Constructs a path from a node to the root of the tree.
@@ -116,7 +123,10 @@ mod tests {
 
     #[test]
     pub fn access() {
-        let mut tree = super::LinkCutTree::new(4);
+        let mut tree = super::LinkCutTree::new();
+        for i in 0..4 {
+            tree.make_tree(i as f64);
+        }
         // '1' has a path pointer to '0', '1' has a right child '2'.
         // after access(2), '2' should be the root of the tree:
         //    0             0             0               2
@@ -149,7 +159,10 @@ mod tests {
         //      \              |\
         //       3             1 2
         //
-        let mut tree = super::LinkCutTree::new(4);
+        let mut tree = super::LinkCutTree::new();
+        for i in 0..4 {
+            tree.make_tree(i as f64);
+        }
         tree.forest[0].left = Some(1);
         tree.forest[0].right = Some(2);
         tree.forest[1].parent = Parent::Node(0);
@@ -181,7 +194,10 @@ mod tests {
         //   0            =>      0
         //    \                    \
         //     2                    2
-        let mut tree = super::LinkCutTree::new(4);
+        let mut tree = super::LinkCutTree::new();
+        for i in 0..4 {
+            tree.make_tree(i as f64);
+        }
         tree.forest[0].left = Some(1);
         tree.forest[0].right = Some(2);
         tree.forest[1].parent = Parent::Node(0);
@@ -203,7 +219,10 @@ mod tests {
         //   1   2
         //       |
         //       3
-        let mut tree = super::LinkCutTree::new(4);
+        let mut tree = super::LinkCutTree::new();
+        for i in 0..4 {
+            tree.make_tree(i as f64);
+        }
         tree.forest[0].left = Some(1);
         tree.forest[0].right = Some(2);
         tree.forest[1].parent = Parent::Node(0);
@@ -227,7 +246,10 @@ mod tests {
         //   4   5   8
         //          /
         //         9
-        let mut lctree = super::LinkCutTree::new(10);
+        let mut lctree = super::LinkCutTree::new();
+        for i in 0..10 {
+            lctree.make_tree(i as f64);
+        }
         lctree.link(1, 0);
         lctree.link(2, 1);
         lctree.link(3, 1);
@@ -289,7 +311,10 @@ mod tests {
         //   4   5   8
         //          /
         //         9
-        let mut lctree = super::LinkCutTree::new(10);
+        let mut lctree = super::LinkCutTree::new();
+        for i in 0..10 {
+            lctree.make_tree(i as f64);
+        }
         lctree.link(1, 0);
         lctree.link(2, 1);
         lctree.link(3, 1);
@@ -337,7 +362,10 @@ mod tests {
         //   1   4
         //  / \
         // 2   3
-        let mut lctree = super::LinkCutTree::new(10);
+        let mut lctree = super::LinkCutTree::new();
+        for i in 0..5 {
+            lctree.make_tree(i as f64);
+        }
         lctree.link(1, 0);
         lctree.link(2, 1);
         lctree.link(3, 1);
@@ -358,18 +386,11 @@ mod tests {
 
     #[test]
     pub fn findmax() {
-        let mut lctree = super::LinkCutTree::new(10);
-        // [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0]
-        lctree.forest[0].weight = 9.0;
-        lctree.forest[1].weight = 1.0;
-        lctree.forest[2].weight = 8.0;
-        lctree.forest[3].weight = 0.0;
-        lctree.forest[4].weight = 6.0;
-        lctree.forest[5].weight = 2.0;
-        lctree.forest[6].weight = 4.0;
-        lctree.forest[7].weight = 3.0;
-        lctree.forest[8].weight = 7.0;
-        lctree.forest[9].weight = 5.0;
+        let mut lctree = super::LinkCutTree::new();
+        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
+        for i in 0..weights.len() {
+            lctree.make_tree(weights[i]);
+        }
 
         // We form a link-cut tree from a rooted tree with the following structure
         // (the numbers in parentheses are the weights of the nodes):

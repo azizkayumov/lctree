@@ -106,12 +106,12 @@ pub fn connectivity() {
 
     // initialize link-cut tree, we start with a forest of single nodes
     // (edges are not added yet):
-    let mut lctree = LinkCutTree::new(NUMBER_OF_NODES);
+    let mut lctree = LinkCutTree::new();
     let mut component_ids = (0..NUMBER_OF_NODES).collect::<Vec<usize>>();
     let mut weights = (0..NUMBER_OF_NODES).map(|i| i as f64).collect::<Vec<_>>();
     weights.shuffle(&mut rng);
-    for i in 0..NUMBER_OF_NODES {
-        lctree.set_weight(i, weights[i]);
+    for w in 0..NUMBER_OF_NODES {
+        lctree.make_tree(weights[w]);
     }
 
     // perform random operations: link, cut, or connected:
