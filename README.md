@@ -7,7 +7,7 @@ Rust implementation of [Link-Cut-Tree](https://dl.acm.org/doi/10.1145/253262.253
 ## Example
 This example shows how to link and cut edges:
 ```rust
-use srtree::SRTree;
+use lctree::LinkCutTree;
 
 fn main() {
     // We form a link-cut tree from a rooted tree with the following structure:
@@ -27,11 +27,7 @@ fn main() {
     lctree.link(6, 5);
 
     // Checking connectivity:
-    for i in 0..7 {
-        for j in 0..7 {
-            assert!(lctree.connected(i, j));
-        }
-    }
+    assert!(lctree.connected(2, 6)); // connected
 
     // We cut node 4 from its parent 0:
     lctree.cut(4, 0);
@@ -45,22 +41,8 @@ fn main() {
     //          /
     //         6
 
-    // We check connectivity again for the two trees:
-    for i in 0..4 {
-        for j in 0..4 {
-            assert!(lctree.connected(i, j));
-        }
-    }
-    for i in 4..7 {
-        for j in 4..7 {
-            assert!(lctree.connected(i, j));
-        }
-    }
-    for i in 0..4 {
-        for j in 4..7 {
-            assert!(!lctree.connected(i, j));
-        }
-    }
+    // We check connectivity again:
+    assert!(!lctree.connected(2, 6)); // not connected anymore
 }
 ```
 
