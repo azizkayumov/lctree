@@ -2,6 +2,15 @@
 name = "lctree"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.66"
+readme = "README.md"
+license = "Apache-2.0"
+keywords = ["tree", "dynamic-connectivity"]
+categories = ["algorithms", "data-structures"]
+authors = ["Kayumov A.I. <kayumovabduaziz@gmail.com>"]
+exclude = ["./github"]
+description = "Rust implementation of Link-Cut-Tree: self-balancing data structure to maintain a forest of rooted trees."
+repository = "https://github.com/azizkayumov/lctree"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
