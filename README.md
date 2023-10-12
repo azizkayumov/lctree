@@ -1,1 +1,86 @@
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/azizkayumov/lctree/ci.yml?style=plastic)](#)
+[![crates.io](https://img.shields.io/crates/v/lctree)](https://crates.io/crates/lctree)
+
 # lctree
+Rust implementation of [Link-Cut-Tree](https://dl.acm.org/doi/10.1145/253262.253347](https://dl.acm.org/doi/pdf/10.1145/800076.802464)): self-balancing data structure to maintain a forest of rooted trees.
+
+## Example
+This example shows how to link and cut edges:
+```rust
+use srtree::SRTree;
+
+fn main() {
+        // We form a link-cut tree from a rooted tree with the following structure:
+        //     0
+        //    / \
+        //   1   4
+        //  / \   \
+        // 2   3   5
+        //        /
+        //       6
+        let mut lctree = super::LinkCutTree::new(7);
+        lctree.link(1, 0);
+        lctree.link(2, 1);
+        lctree.link(3, 1);
+        lctree.link(4, 0);
+        lctree.link(5, 4);
+        lctree.link(6, 5);
+
+        // Checking connectivity:
+        for i in 0..7 {
+            for j in 0..7 {
+                assert!(lctree.connected(i, j));
+            }
+        }
+
+        // We cut node 4 from its parent 0:
+        lctree.cut(4, 0);
+
+        // The forest should now look like this:
+        //     0
+        //    /   
+        //   1     4
+        //  / \     \
+        // 2   3     5
+        //          /
+        //         6
+
+        // We check connectivity again for the two trees:
+        for i in 0..4 {
+            for j in 0..4 {
+                assert!(lctree.connected(i, j));
+            }
+        }
+        for i in 4..7 {
+            for j in 4..7 {
+                assert!(lctree.connected(i, j));
+            }
+        }
+        for i in 0..4 {
+            for j in 4..7 {
+                assert!(!lctree.connected(i, j));
+            }
+        }
+}
+```
+
+## License
+
+Copyright 2019-2024 Kayumov Abduaziz.
+
+Licensed under [Apache License, Version 2.0][apache-license] (the "License");
+you may not use this crate except in compliance with the License.
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See [LICENSE](LICENSE) for
+the specific language governing permissions and limitations under the License.
+
+## Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the [Apache-2.0
+license][apache-license], shall be licensed as above, without any additional
+terms or conditions.
+
+[apache-license]: http://www.apache.org/licenses/LICENSE-2.0
