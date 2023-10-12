@@ -26,7 +26,7 @@ impl LinkCutTree {
     }
 
     /// Constructs a path from a node to the root of the tree.
-    pub fn access(&mut self, v: usize) {
+    fn access(&mut self, v: usize) {
         splay(&mut self.forest, v);
 
         if let Some(right_idx) = self.forest[v].right {
@@ -54,21 +54,10 @@ impl LinkCutTree {
     }
 
     /// Makes v the root of its represented tree by flipping the path from v to the root.
-    pub fn reroot(&mut self, v: usize) {
+    fn reroot(&mut self, v: usize) {
         self.access(v);
         self.forest[v].flipped ^= true;
         unflip(&mut self.forest, v);
-    }
-
-    /// Creates a link between two nodes in the forest (where w is the parent of v).
-    pub fn link(&mut self, v: usize, w: usize) {
-        self.reroot(v);
-        self.access(w);
-        if !matches!(self.forest[v].parent, Parent::Root) || v == w {
-            return; // already connected
-        }
-        self.forest[v].left = Some(w); // v is the root of its represented tree, so no need to check if it has a left child
-        self.forest[w].parent = Parent::Node(v);
     }
 
     /// Checks if v and w are connected in the forest.
@@ -79,12 +68,20 @@ impl LinkCutTree {
         !matches!(self.forest[v].parent, Parent::Root) || v == w
     }
 
+    /// Creates a link between two nodes in the forest (where w is the parent of v).
+    pub fn link(&mut self, v: usize, w: usize) {
+        if self.connected(v, w) {
+            return;
+        }
+        // v is the root of its represented tree, so no need to check if it has a left child
+        self.forest[v].left = Some(w);
+        self.forest[w].parent = Parent::Node(v);
+    }
+
     /// Cuts the link between nodes v and w (if it exists)
     pub fn cut(&mut self, v: usize, w: usize) {
-        self.reroot(v);
-        self.access(w);
-        if matches!(self.forest[v].parent, Parent::Root) || v == w {
-            return; // not connected
+        if !self.connected(v, w) {
+            return;
         }
         // detach w from its parent (which is v)
         if let Some(left) = self.forest[w].left {
@@ -95,8 +92,9 @@ impl LinkCutTree {
 
     /// Finds the maximum weight in the path from nodes v and w (if they are connected)
     pub fn findmax(&mut self, v: usize, w: usize) -> usize {
-        self.reroot(v);
-        self.access(w);
+        if !self.connected(v, w) {
+            return usize::MAX;
+        }
         self.forest[w].max_weight_idx
     }
 
@@ -356,5 +354,51 @@ mod tests {
         for i in 0..5 {
             assert_eq!(lctree.findroot(i), 1);
         }
+    }
+
+    #[test]
+    pub fn findmax() {
+        let mut lctree = super::LinkCutTree::new(10);
+        // [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0]
+        lctree.forest[0].weight = 9.0;
+        lctree.forest[1].weight = 1.0;
+        lctree.forest[2].weight = 8.0;
+        lctree.forest[3].weight = 0.0;
+        lctree.forest[4].weight = 6.0;
+        lctree.forest[5].weight = 2.0;
+        lctree.forest[6].weight = 4.0;
+        lctree.forest[7].weight = 3.0;
+        lctree.forest[8].weight = 7.0;
+        lctree.forest[9].weight = 5.0;
+
+        // We form a link-cut tree from a rooted tree with the following structure
+        // (the numbers in parentheses are the weights of the nodes):
+        //           0(9)
+        //           /  \
+        //         1(1)  5(2)
+        //        /   \    \
+        //      2(8)  3(0) 6(4)
+        //      /             \
+        //    4(6)            7(3)
+        //                    /  \
+        //                  8(7) 9(5)
+        lctree.link(1, 0);
+        lctree.link(2, 1);
+        lctree.link(3, 1);
+        lctree.link(4, 2);
+        lctree.link(5, 0);
+        lctree.link(6, 5);
+        lctree.link(7, 6);
+        lctree.link(8, 7);
+        lctree.link(9, 7);
+
+        // We check the node index with max weight in the path from each node to the root:
+        assert_eq!(lctree.findmax(4, 5), 0);
+        assert_eq!(lctree.findmax(3, 6), 0);
+        assert_eq!(lctree.findmax(2, 7), 0);
+        assert_eq!(lctree.findmax(1, 8), 0);
+        assert_eq!(lctree.findmax(0, 9), 0);
+        assert_eq!(lctree.findmax(4, 3), 2);
+        assert_eq!(lctree.findmax(5, 7), 6);
     }
 }
