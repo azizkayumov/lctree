@@ -26,7 +26,7 @@ impl LinkCutTree {
     }
 
     /// Constructs a path from a node to the root of the tree.
-    pub fn access(&mut self, v: usize) {
+    fn access(&mut self, v: usize) {
         splay(&mut self.forest, v);
 
         if let Some(right_idx) = self.forest[v].right {
@@ -54,21 +54,10 @@ impl LinkCutTree {
     }
 
     /// Makes v the root of its represented tree by flipping the path from v to the root.
-    pub fn reroot(&mut self, v: usize) {
+    fn reroot(&mut self, v: usize) {
         self.access(v);
         self.forest[v].flipped ^= true;
         unflip(&mut self.forest, v);
-    }
-
-    /// Creates a link between two nodes in the forest (where w is the parent of v).
-    pub fn link(&mut self, v: usize, w: usize) {
-        self.reroot(v);
-        self.access(w);
-        if !matches!(self.forest[v].parent, Parent::Root) || v == w {
-            return; // already connected
-        }
-        self.forest[v].left = Some(w); // v is the root of its represented tree, so no need to check if it has a left child
-        self.forest[w].parent = Parent::Node(v);
     }
 
     /// Checks if v and w are connected in the forest.
@@ -79,12 +68,20 @@ impl LinkCutTree {
         !matches!(self.forest[v].parent, Parent::Root) || v == w
     }
 
+    /// Creates a link between two nodes in the forest (where w is the parent of v).
+    pub fn link(&mut self, v: usize, w: usize) {
+        if self.connected(v, w) {
+            return; // already connected
+        }
+        // v is the root of its represented tree, so no need to check if it has a left child
+        self.forest[v].left = Some(w);
+        self.forest[w].parent = Parent::Node(v);
+    }
+
     /// Cuts the link between nodes v and w (if it exists)
     pub fn cut(&mut self, v: usize, w: usize) {
-        self.reroot(v);
-        self.access(w);
-        if matches!(self.forest[v].parent, Parent::Root) || v == w {
-            return; // not connected
+        if !self.connected(v, w) {
+            return;
         }
         // detach w from its parent (which is v)
         if let Some(left) = self.forest[w].left {
@@ -95,8 +92,9 @@ impl LinkCutTree {
 
     /// Finds the maximum weight in the path from nodes v and w (if they are connected)
     pub fn findmax(&mut self, v: usize, w: usize) -> usize {
-        self.reroot(v);
-        self.access(w);
+        if !self.connected(v, w) {
+            return usize::MAX;
+        }
         self.forest[w].max_weight_idx
     }
 
