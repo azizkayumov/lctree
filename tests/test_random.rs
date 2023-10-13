@@ -111,6 +111,27 @@ impl BruteForce {
         }
         max[&dest]
     }
+
+    pub fn random_edge(&self, rng: &mut StdRng) -> (usize, usize) {
+        let neighbors = (0..NUMBER_OF_NODES)
+            .filter(|&v| !self.adj[v].is_empty())
+            .collect::<Vec<_>>();
+        if neighbors.is_empty() {
+            return (usize::MAX, usize::MAX);
+        }
+        let v = *neighbors.choose(rng).unwrap();
+        let w = *self.adj[v].iter().choose(rng).unwrap();
+        (v, w)
+    }
+
+    pub fn random_connected_pair(&self, rng: &mut StdRng) -> (usize, usize) {
+        let v = rng.gen_range(0..NUMBER_OF_NODES);
+        let w = (0..NUMBER_OF_NODES)
+            .filter(|&w| self.connected(v, w))
+            .choose(rng)
+            .unwrap();
+        (v, w)
+    }
 }
 
 const NUMBER_OF_NODES: usize = 100;
@@ -146,9 +167,6 @@ pub fn connectivity() {
     let mut lctree_time = Duration::new(0, 0);
     let mut brute_time = Duration::new(0, 0);
 
-    // Edges are empty at the beginning:
-    let mut edges_in_forest = HashSet::new();
-
     // Perform random operations: link, cut, or connected:
     for _ in 0..NUMBER_OF_OPERATIONS {
         let operation: Operation = rng.gen();
@@ -157,9 +175,6 @@ pub fn connectivity() {
                 // Choose two random nodes to link:
                 let v = rng.gen_range(0..NUMBER_OF_NODES);
                 let w = rng.gen_range(0..NUMBER_OF_NODES);
-                if !brute.connected(v, w) {
-                    edges_in_forest.insert((v, w));
-                }
 
                 let now = std::time::Instant::now();
                 lctree.link(v, w);
@@ -170,22 +185,19 @@ pub fn connectivity() {
                 brute_time += now.elapsed();
             }
             Operation::Cut => {
-                if edges_in_forest.is_empty() {
-                    continue;
-                }
                 // Choose a random existing edge to cut:
-                let (v, w) = edges_in_forest.iter().choose(&mut rng).unwrap();
+                let (v, w) = brute.random_edge(&mut rng);
+                if v == w {
+                    continue; // no edges to cut
+                }
 
                 let now = std::time::Instant::now();
-                lctree.cut(*v, *w);
+                lctree.cut(v, w);
                 lctree_time += now.elapsed();
 
                 let now = std::time::Instant::now();
-                brute.cut(*v, *w);
+                brute.cut(v, w);
                 brute_time += now.elapsed();
-
-                // Remove the edge:
-                edges_in_forest.remove(&(*v, *w));
             }
             Operation::Connected => {
                 // Choose two random nodes to check if they are connected:
@@ -205,11 +217,7 @@ pub fn connectivity() {
             Operation::Findmax => {
                 // Choose two random nodes from the same tree to find the node
                 // with the maximum weight in the path between them:
-                let v = rng.gen_range(0..NUMBER_OF_NODES);
-                let w = (0..NUMBER_OF_NODES)
-                    .filter(|&w| brute.connected(v, w))
-                    .choose(&mut rng)
-                    .unwrap();
+                let (v, w) = brute.random_connected_pair(&mut rng);
 
                 let now = std::time::Instant::now();
                 let actual = lctree.findmax(v, w);
