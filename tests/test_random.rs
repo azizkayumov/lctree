@@ -5,7 +5,10 @@ use rand::{
     Rng, SeedableRng,
 };
 use rand_derive2::RandGen;
-use std::collections::HashSet;
+use std::{
+    collections::{HashMap, HashSet},
+    time::Duration,
+};
 
 fn create_random_generator() -> StdRng {
     let seed = rand::thread_rng().gen();
@@ -13,79 +16,101 @@ fn create_random_generator() -> StdRng {
     StdRng::seed_from_u64(seed)
 }
 
-fn dfs(
-    v: usize,
-    adj: &Vec<Vec<usize>>,
-    visited: &mut Vec<bool>,
-    component_ids: &mut Vec<usize>,
-    component_id: usize,
-) {
-    visited[v] = true;
-    component_ids[v] = component_id;
-    for &w in &adj[v] {
-        if !visited[w] {
-            dfs(w, adj, visited, component_ids, component_id);
-        }
-    }
+struct BruteForce {
+    weights: Vec<f64>,
+    adj: Vec<HashSet<usize>>,
+    component_ids: Vec<usize>,
 }
 
-fn connected_components(edges: &HashSet<(usize, usize)>) -> Vec<usize> {
-    // create adjacency list from edges
-    let mut adj = vec![vec![]; NUMBER_OF_NODES];
-    for (v, w) in edges {
-        adj[*v].push(*w);
-        adj[*w].push(*v);
-    }
-
-    // explore each component using dfs and assign component ids
-    let mut visited = vec![false; NUMBER_OF_NODES];
-    let mut component_ids = vec![0; NUMBER_OF_NODES];
-    for v in 0..NUMBER_OF_NODES {
-        if !visited[v] {
-            dfs(v, &adj, &mut visited, &mut component_ids, v);
+impl BruteForce {
+    pub fn new(weights: Vec<f64>) -> Self {
+        // We start with a forest of single nodes:
+        let component_ids = (0..NUMBER_OF_NODES).collect::<Vec<usize>>();
+        let adj = vec![HashSet::new(); NUMBER_OF_NODES];
+        Self {
+            weights,
+            adj,
+            component_ids,
         }
     }
-    component_ids
-}
 
-fn findmax_brute_force(
-    v: usize,
-    w: usize,
-    edges: &HashSet<(usize, usize)>,
-    weights: &[f64],
-) -> usize {
-    // create adjacency list from edges
-    let mut adj = vec![vec![]; NUMBER_OF_NODES];
-    for (v, w) in edges {
-        adj[*v].push(*w);
-        adj[*w].push(*v);
-    }
-
-    let mut findmax = (0..NUMBER_OF_NODES).collect::<Vec<usize>>();
-    let mut visited = vec![false; NUMBER_OF_NODES];
-    let mut stack = vec![(v, v)];
-
-    // dfs from v to w, keeping track of the maximum weight in the path
-    while let Some((prev, cur)) = stack.pop() {
-        if visited[cur] {
-            continue;
-        }
-        visited[cur] = true;
-        if weights[findmax[prev]] > weights[findmax[cur]] {
-            findmax[cur] = findmax[prev]
-        }
-
-        if cur == w {
-            break;
-        }
-
-        for &next in &adj[cur] {
-            if !visited[next] {
-                stack.push((cur, next));
+    fn update_component_ids(&mut self, node_idx: usize, new_component_id: usize) {
+        // Explore each component and assign new component id
+        let mut visited = HashSet::new();
+        let mut stack = vec![node_idx];
+        while let Some(cur) = stack.pop() {
+            if visited.contains(&cur) {
+                continue;
+            }
+            visited.insert(cur);
+            self.component_ids[cur] = new_component_id;
+            for next in &self.adj[cur] {
+                if !visited.contains(next) {
+                    stack.push(*next);
+                }
             }
         }
     }
-    findmax[w]
+
+    pub fn link(&mut self, v: usize, w: usize) {
+        // We only add the edge if it connects two different trees,
+        // (we don't want to create cycles):
+        if self.component_ids[v] != self.component_ids[w] {
+            let new_component_id = self.component_ids[v].min(self.component_ids[w]);
+            if self.component_ids[v] == new_component_id {
+                self.update_component_ids(w, new_component_id);
+            } else {
+                self.update_component_ids(v, new_component_id);
+            }
+            self.adj[v].insert(w);
+            self.adj[w].insert(v);
+        }
+    }
+
+    pub fn cut(&mut self, v: usize, w: usize) {
+        // We only cut the edge if it exists:
+        if !self.adj[v].contains(&w) {
+            return;
+        }
+        // Remove the edge and update the component ids:
+        self.adj[v].remove(&w);
+        self.adj[w].remove(&v);
+        self.update_component_ids(v, v);
+        self.update_component_ids(w, w);
+    }
+
+    pub fn connected(&self, v: usize, w: usize) -> bool {
+        self.component_ids[v] == self.component_ids[w]
+    }
+
+    pub fn findmax(&self, src: usize, dest: usize) -> usize {
+        if self.component_ids[src] != self.component_ids[dest] {
+            return usize::MAX;
+        }
+        // explore each component and assign maximum weight in the path
+        // until we reach the destination
+        let mut max = HashMap::new();
+        max.insert(src, src);
+        let mut visited = HashSet::new();
+        let mut stack = vec![(src, src)];
+        while let Some((prev, cur)) = stack.pop() {
+            visited.insert(cur);
+            max.insert(cur, cur);
+            let prev_max = max[&prev];
+            if self.weights[prev_max] > self.weights[cur] {
+                max.insert(cur, prev_max);
+            }
+            if cur == dest {
+                return max[&cur];
+            }
+            for next in &self.adj[cur] {
+                if !visited.contains(next) {
+                    stack.push((cur, *next));
+                }
+            }
+        }
+        max[&dest]
+    }
 }
 
 const NUMBER_OF_NODES: usize = 100;
@@ -102,19 +127,29 @@ enum Operation {
 #[test]
 pub fn connectivity() {
     let mut rng = create_random_generator();
-    let mut edges = HashSet::new();
 
-    // initialize link-cut tree, we start with a forest of single nodes
-    // (edges are not added yet):
-    let mut lctree = LinkCutTree::new();
-    let mut component_ids = (0..NUMBER_OF_NODES).collect::<Vec<usize>>();
+    // Generate distinct random weights:
     let mut weights = (0..NUMBER_OF_NODES).map(|i| i as f64).collect::<Vec<_>>();
     weights.shuffle(&mut rng);
+
+    // Initialize link-cut tree, we start with a forest of single nodes
+    // (edges are not added yet):
+    let mut lctree = LinkCutTree::new();
     for w in 0..NUMBER_OF_NODES {
         lctree.make_tree(weights[w]);
     }
 
-    // perform random operations: link, cut, or connected:
+    // Initialize brute force data structure:
+    let mut brute = BruteForce::new(weights.clone());
+
+    // Time the operations:
+    let mut lctree_time = Duration::new(0, 0);
+    let mut brute_time = Duration::new(0, 0);
+
+    // Edges are empty at the beginning:
+    let mut edges_in_forest = HashSet::new();
+
+    // Perform random operations: link, cut, or connected:
     for _ in 0..NUMBER_OF_OPERATIONS {
         let operation: Operation = rng.gen();
         match operation {
@@ -122,45 +157,75 @@ pub fn connectivity() {
                 // Choose two random nodes to link:
                 let v = rng.gen_range(0..NUMBER_OF_NODES);
                 let w = rng.gen_range(0..NUMBER_OF_NODES);
-
-                lctree.link(v, w); // ignores cycles
-
-                // We only add the edge if it connects two different trees,
-                // we don't want to create cycles:
-                if component_ids[v] != component_ids[w] {
-                    edges.insert((v, w));
-                    component_ids = connected_components(&edges);
+                if !brute.connected(v, w) {
+                    edges_in_forest.insert((v, w));
                 }
+
+                let now = std::time::Instant::now();
+                lctree.link(v, w);
+                lctree_time += now.elapsed();
+
+                let now = std::time::Instant::now();
+                brute.link(v, w);
+                brute_time += now.elapsed();
             }
             Operation::Cut => {
-                if edges.is_empty() {
+                if edges_in_forest.is_empty() {
                     continue;
                 }
-                // Choose a random edge to cut:
-                let (v, w) = edges.iter().choose(&mut rng).unwrap();
-                lctree.cut(*v, *w);
+                // Choose a random existing edge to cut:
+                let (v, w) = edges_in_forest.iter().choose(&mut rng).unwrap();
 
-                // Remove the edge and update the component ids:
-                edges.remove(&(*v, *w));
-                component_ids = connected_components(&edges);
+                let now = std::time::Instant::now();
+                lctree.cut(*v, *w);
+                lctree_time += now.elapsed();
+
+                let now = std::time::Instant::now();
+                brute.cut(*v, *w);
+                brute_time += now.elapsed();
+
+                // Remove the edge:
+                edges_in_forest.remove(&(*v, *w));
             }
             Operation::Connected => {
                 // Choose two random nodes to check if they are connected:
                 let v = rng.gen_range(0..NUMBER_OF_NODES);
                 let w = rng.gen_range(0..NUMBER_OF_NODES);
-                assert_eq!(lctree.connected(v, w), component_ids[v] == component_ids[w]);
+
+                let now = std::time::Instant::now();
+                let actual = lctree.connected(v, w);
+                lctree_time += now.elapsed();
+
+                let now = std::time::Instant::now();
+                let expected = brute.connected(v, w);
+                brute_time += now.elapsed();
+
+                assert_eq!(actual, expected);
             }
             Operation::Findmax => {
                 // Choose two random nodes from the same tree to find the node
                 // with the maximum weight in the path between them:
                 let v = rng.gen_range(0..NUMBER_OF_NODES);
                 let w = (0..NUMBER_OF_NODES)
-                    .filter(|&w| component_ids[w] == component_ids[v])
+                    .filter(|&w| brute.connected(v, w))
                     .choose(&mut rng)
                     .unwrap();
-                let expected = findmax_brute_force(v, w, &edges, &weights);
-                assert_eq!(lctree.findmax(v, w), expected);
+
+                let now = std::time::Instant::now();
+                let actual = lctree.findmax(v, w);
+                lctree_time += now.elapsed();
+
+                let now = std::time::Instant::now();
+                let expected = brute.findmax(v, w);
+                brute_time += now.elapsed();
+
+                assert_eq!(actual, expected);
             }
         }
     }
+
+    println!("Number of nodes:       {}", NUMBER_OF_NODES);
+    println!("Number of operations:  {}", NUMBER_OF_OPERATIONS);
+    println!("Link-cut tree time:    {:?}", lctree_time);
+    println!("Brute force time:      {:?}", brute_time);
 }
