@@ -155,7 +155,7 @@ pub fn connectivity() {
 
     // Initialize link-cut tree, we start with a forest of single nodes
     // (edges are not added yet):
-    let mut lctree = LinkCutTree::new();
+    let mut lctree = LinkCutTree::default();
     for w in 0..NUMBER_OF_NODES {
         lctree.make_tree(weights[w]);
     }
@@ -220,7 +220,7 @@ pub fn connectivity() {
                 let (v, w) = brute.random_connected_pair(&mut rng);
 
                 let now = std::time::Instant::now();
-                let actual = lctree.findmax(v, w);
+                let actual = lctree.path(v, w).max_weight_idx;
                 lctree_time += now.elapsed();
 
                 let now = std::time::Instant::now();

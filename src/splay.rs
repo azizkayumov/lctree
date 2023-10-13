@@ -1,6 +1,6 @@
 use crate::{
     node::{Node, Parent},
-    path::update_max,
+    path::{update, Path},
 };
 
 /// Rotates the subtree rooted at `node_idx` to the left:
@@ -14,7 +14,7 @@ use crate::{
 //       1   2            0   4
 //          / \          / \
 //         3   4        1   3
-fn rotate_left(forest: &mut [Node], node_idx: usize) {
+fn rotate_left<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
     assert!(
         node_idx < forest.len(),
         "rotate_left: node_idx out of bounds"
@@ -43,8 +43,8 @@ fn rotate_left(forest: &mut [Node], node_idx: usize) {
     }
 
     // update aggregate information
-    update_max(forest, node_idx);
-    update_max(forest, right_child);
+    update(forest, node_idx);
+    update(forest, right_child);
 }
 
 /// Rotates the subtree rooted at `node_idx` to the right:
@@ -58,7 +58,7 @@ fn rotate_left(forest: &mut [Node], node_idx: usize) {
 //       1   4            2   0
 //      / \                  / \
 //     2   3                3   4
-fn rotate_right(forest: &mut [Node], node_idx: usize) {
+fn rotate_right<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
     assert!(
         node_idx < forest.len(),
         "rotate_right: node_idx out of bounds"
@@ -87,8 +87,8 @@ fn rotate_right(forest: &mut [Node], node_idx: usize) {
     }
 
     // update aggregate information
-    update_max(forest, node_idx);
-    update_max(forest, left_child);
+    update(forest, node_idx);
+    update(forest, left_child);
 }
 
 /// Rotates the parent of `node_idx` to the right or left, depending on the relationship between:
@@ -99,7 +99,7 @@ fn rotate_right(forest: &mut [Node], node_idx: usize) {
 //    0                1
 //   /        =>        \
 //  1                    0
-fn rotate(forest: &mut [Node], node_idx: usize) {
+fn rotate<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
     assert!(node_idx < forest.len(), "rotate: node_idx out of bounds");
     assert!(
         matches!(forest[node_idx].parent, Parent::Node(_)),
@@ -124,7 +124,7 @@ fn rotate(forest: &mut [Node], node_idx: usize) {
 ///     1              0   1
 ///    /
 ///   2
-pub fn splay(forest: &mut [Node], node_idx: usize) {
+pub fn splay<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
     while let Parent::Node(parent_idx) = forest[node_idx].parent {
         if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
             unflip(forest, grandparent_idx);
@@ -154,7 +154,7 @@ pub fn splay(forest: &mut [Node], node_idx: usize) {
 
 /// Unflips the subtree rooted at `node_idx`, swapping the left and right children.
 /// The children's `flipped` flag is also toggled to propogate the change down the tree.
-pub fn unflip(forest: &mut [Node], node_idx: usize) {
+pub fn unflip<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
     if forest[node_idx].flipped {
         forest[node_idx].flipped = false;
         std::mem::swap(&mut forest[node_idx].left, &mut forest[node_idx].right);
@@ -170,9 +170,12 @@ pub fn unflip(forest: &mut [Node], node_idx: usize) {
 #[cfg(test)]
 mod tests {
     use super::{rotate, rotate_left, rotate_right, unflip};
-    use crate::node::{self, Node};
+    use crate::{
+        node::{self, Node},
+        path::FindMax,
+    };
 
-    fn create_nodes(n: usize) -> Vec<Node> {
+    fn create_nodes(n: usize) -> Vec<Node<FindMax>> {
         (0..n).map(|i| Node::new(i, 0.0)).collect()
     }
 

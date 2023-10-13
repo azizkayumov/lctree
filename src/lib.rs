@@ -2,7 +2,7 @@
 mod node;
 mod path;
 mod splay;
-use path::update_max;
+use path::{update, FindMax, Path};
 use splay::unflip;
 
 use crate::{
@@ -10,17 +10,17 @@ use crate::{
     splay::splay,
 };
 
-pub struct LinkCutTree {
-    forest: Vec<Node>,
+pub struct LinkCutTree<T: Path + Copy + Clone> {
+    forest: Vec<Node<T>>,
 }
 
-impl Default for LinkCutTree {
+impl Default for LinkCutTree<FindMax> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl LinkCutTree {
+impl<T: Path + Copy + Clone> LinkCutTree<T> {
     #[must_use]
     pub fn new() -> Self {
         Self { forest: Vec::new() }
@@ -57,7 +57,7 @@ impl LinkCutTree {
         }
 
         // update aggregate information
-        update_max(&mut self.forest, v);
+        update(&mut self.forest, v);
     }
 
     /// Makes v the root of its represented tree by flipping the path from v to the root.
@@ -101,12 +101,12 @@ impl LinkCutTree {
         }
     }
 
-    /// Finds the maximum weight in the path from nodes v and w (if they are connected)
-    pub fn findmax(&mut self, v: usize, w: usize) -> usize {
+    /// Performs path aggregation on a path between v and w (if they are connected)
+    pub fn path(&mut self, v: usize, w: usize) -> T {
         if !self.connected(v, w) {
-            return usize::MAX;
+            return T::default(f64::INFINITY, usize::MAX);
         }
-        self.forest[w].max_weight_idx
+        self.forest[w].path
     }
 
     /// Finds the root of the tree that v is in.
@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     pub fn access() {
-        let mut tree = super::LinkCutTree::new();
+        let mut tree = super::LinkCutTree::default();
         for i in 0..4 {
             tree.make_tree(i as f64);
         }
@@ -163,7 +163,7 @@ mod tests {
         //      \              |\
         //       3             1 2
         //
-        let mut tree = super::LinkCutTree::new();
+        let mut tree = super::LinkCutTree::default();
         for i in 0..4 {
             tree.make_tree(i as f64);
         }
@@ -198,7 +198,7 @@ mod tests {
         //   0            =>      0
         //    \                    \
         //     2                    2
-        let mut tree = super::LinkCutTree::new();
+        let mut tree = super::LinkCutTree::default();
         for i in 0..4 {
             tree.make_tree(i as f64);
         }
@@ -223,7 +223,7 @@ mod tests {
         //   1   2
         //       |
         //       3
-        let mut tree = super::LinkCutTree::new();
+        let mut tree = super::LinkCutTree::default();
         for i in 0..4 {
             tree.make_tree(i as f64);
         }
@@ -250,7 +250,7 @@ mod tests {
         //   4   5   8
         //          /
         //         9
-        let mut lctree = super::LinkCutTree::new();
+        let mut lctree = super::LinkCutTree::default();
         for i in 0..10 {
             lctree.make_tree(i as f64);
         }
@@ -311,7 +311,7 @@ mod tests {
         //   1   2
         //       |
         //       3
-        let mut lctree = super::LinkCutTree::new();
+        let mut lctree = super::LinkCutTree::default();
         for i in 0..4 {
             lctree.make_tree(i as f64);
         }
@@ -338,7 +338,7 @@ mod tests {
         //   4   5   8
         //          /
         //         9
-        let mut lctree = super::LinkCutTree::new();
+        let mut lctree = super::LinkCutTree::default();
         for i in 0..10 {
             lctree.make_tree(i as f64);
         }
@@ -389,7 +389,7 @@ mod tests {
         //   1   4
         //  / \
         // 2   3
-        let mut lctree = super::LinkCutTree::new();
+        let mut lctree = super::LinkCutTree::default();
         for i in 0..5 {
             lctree.make_tree(i as f64);
         }
@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     pub fn findmax() {
-        let mut lctree = super::LinkCutTree::new();
+        let mut lctree = super::LinkCutTree::default();
         let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
         for i in 0..weights.len() {
             lctree.make_tree(weights[i]);
@@ -441,12 +441,12 @@ mod tests {
         lctree.link(9, 7);
 
         // We check the node index with max weight in the path from each node to the root:
-        assert_eq!(lctree.findmax(4, 5), 0);
-        assert_eq!(lctree.findmax(3, 6), 0);
-        assert_eq!(lctree.findmax(2, 7), 0);
-        assert_eq!(lctree.findmax(1, 8), 0);
-        assert_eq!(lctree.findmax(0, 9), 0);
-        assert_eq!(lctree.findmax(4, 3), 2);
-        assert_eq!(lctree.findmax(5, 7), 6);
+        assert_eq!(lctree.path(4, 5).max_weight_idx, 0);
+        assert_eq!(lctree.path(3, 6).max_weight_idx, 0);
+        assert_eq!(lctree.path(2, 7).max_weight_idx, 0);
+        assert_eq!(lctree.path(1, 8).max_weight_idx, 0);
+        assert_eq!(lctree.path(0, 9).max_weight_idx, 0);
+        assert_eq!(lctree.path(4, 3).max_weight_idx, 2);
+        assert_eq!(lctree.path(5, 7).max_weight_idx, 6);
     }
 }

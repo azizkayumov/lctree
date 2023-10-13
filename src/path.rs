@@ -1,7 +1,7 @@
 use crate::node::Node;
 
 pub trait Path {
-    fn default(node: &Node) -> Self;
+    fn default(weight: f64, index: usize) -> Self;
     fn aggregate(&mut self, other: Self);
 }
 
@@ -12,10 +12,10 @@ pub struct FindMax {
 }
 
 impl Path for FindMax {
-    fn default(node: &Node) -> Self {
+    fn default(weight: f64, index: usize) -> Self {
         FindMax {
-            max_weight_idx: node.idx,
-            max_weight: node.weight,
+            max_weight_idx: index,
+            max_weight: weight,
         }
     }
 
@@ -32,25 +32,12 @@ pub struct FindMin {
     pub min_weight: f64,
 }
 
-pub fn update_max(forest: &mut [Node], node_idx: usize) {
-    let mut max_idx = node_idx;
-    forest[node_idx].findmax = FindMax::default(&forest[node_idx]);
-
+pub fn update<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
+    forest[node_idx].path = T::default(forest[node_idx].weight, node_idx);
     if let Some(left_child) = forest[node_idx].left {
-        let left_max = forest[left_child].max_weight_idx;
-        if forest[left_max].weight > forest[max_idx].weight {
-            max_idx = left_max;
-        }
-        forest[node_idx].max_weight_idx = max_idx;
-        forest[node_idx].findmax.aggregate(forest[left_child].findmax)
+        forest[node_idx].path.aggregate(forest[left_child].path);
     }
     if let Some(right_child) = forest[node_idx].right {
-        let right_max = forest[right_child].max_weight_idx;
-        if forest[right_max].weight > forest[max_idx].weight {
-            max_idx = right_max;
-        }
-        forest[node_idx].findmax.aggregate(forest[right_child].findmax)
+        forest[node_idx].path.aggregate(forest[right_child].path);
     }
-    forest[node_idx].max_weight_idx = max_idx;
-    assert_eq!(forest[node_idx].max_weight_idx, forest[node_idx].findmax.max_weight_idx);
 }
