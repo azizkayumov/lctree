@@ -1,3 +1,5 @@
+use crate::path::FindMax;
+
 #[derive(Copy, Clone)]
 pub enum Parent {
     Node(usize), // parent node in the tree
@@ -14,6 +16,7 @@ pub struct Node {
     // for path aggregation:
     pub weight: f64,
     pub max_weight_idx: usize,
+    pub findmax: FindMax,
 }
 
 impl Node {
@@ -26,6 +29,10 @@ impl Node {
             flipped: false,
             weight,
             max_weight_idx: idx,
+            findmax: FindMax {
+                max_weight_idx: idx,
+                max_weight: weight,
+            },
         }
     }
 
