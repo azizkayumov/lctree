@@ -92,6 +92,10 @@ impl LinkCutTree {
         }
         // detach w from its parent (which is v)
         if let Some(left) = self.forest[w].left {
+            if left != v {
+                eprintln!("Error: no link between {v} and {w}"); // maybe this should be a panic?
+                return;
+            }
             self.forest[w].left = None;
             self.forest[left].parent = Parent::Root;
         }
@@ -236,7 +240,7 @@ mod tests {
 
     #[test]
     pub fn cut() {
-        // We form a link-cut tree from a rooted tree with the following structure:
+        // We form a link-cut tree from the following rooted tree:
         //     0
         //    / \
         //   1   6
@@ -300,8 +304,31 @@ mod tests {
     }
 
     #[test]
+    pub fn cut_non_existing_edge() {
+        // We form a link-cut tree from the following rooted tree:
+        //     0
+        //    / \
+        //   1   2
+        //       |
+        //       3
+        let mut lctree = super::LinkCutTree::new();
+        for i in 0..4 {
+            lctree.make_tree(i as f64);
+        }
+        lctree.link(1, 0);
+        lctree.link(2, 0);
+        lctree.link(3, 2);
+
+        // Try to cut non-existing edge:
+        lctree.cut(1, 3); // should do nothing
+
+        // They should still be connected:
+        assert!(lctree.connected(1, 3));
+    }
+
+    #[test]
     pub fn findroot() {
-        // We form a link-cut tree from a rooted tree with the following structure:
+        // We form a link-cut tree from the following rooted tree:
         //     0
         //    / \
         //   1   6
@@ -356,7 +383,7 @@ mod tests {
 
     #[test]
     pub fn reroot() {
-        // We form a link-cut tree from a rooted tree with the following structure:
+        // We form a link-cut tree from the following rooted tree:
         //     0
         //    / \
         //   1   4
@@ -392,7 +419,7 @@ mod tests {
             lctree.make_tree(weights[i]);
         }
 
-        // We form a link-cut tree from a rooted tree with the following structure
+        // We form a link-cut tree from the following rooted tree
         // (the numbers in parentheses are the weights of the nodes):
         //           0(9)
         //           /  \
