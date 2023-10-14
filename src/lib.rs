@@ -2,7 +2,7 @@
 mod node;
 mod path;
 mod splay;
-use path::{update, FindMax, Path};
+use path::{update, FindMax, FindMin, FindSum, Path};
 use splay::unflip;
 
 use crate::{
@@ -12,12 +12,6 @@ use crate::{
 
 pub struct LinkCutTree<T: Path + Copy + Clone> {
     forest: Vec<Node<T>>,
-}
-
-impl Default for LinkCutTree<FindMax> {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl<T: Path + Copy + Clone> LinkCutTree<T> {
@@ -121,13 +115,40 @@ impl<T: Path + Copy + Clone> LinkCutTree<T> {
     }
 }
 
+impl Default for LinkCutTree<FindMax> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl LinkCutTree<FindMax> {
+    #[must_use]
+    pub fn findmax() -> Self {
+        Self::new()
+    }
+}
+
+impl LinkCutTree<FindMin> {
+    #[must_use]
+    pub fn findmin() -> Self {
+        Self::new()
+    }
+}
+
+impl LinkCutTree<FindSum> {
+    #[must_use]
+    pub fn findsum() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::node::Parent;
 
     #[test]
     pub fn access() {
-        let mut tree = super::LinkCutTree::default();
+        let mut tree = super::LinkCutTree::findmax();
         for i in 0..4 {
             tree.make_tree(i as f64);
         }
@@ -448,5 +469,83 @@ mod tests {
         assert_eq!(lctree.path(0, 9).max_weight_idx, 0);
         assert_eq!(lctree.path(4, 3).max_weight_idx, 2);
         assert_eq!(lctree.path(5, 7).max_weight_idx, 6);
+    }
+
+    #[test]
+    pub fn findmin() {
+        let mut lctree = super::LinkCutTree::findmin();
+        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
+        for i in 0..weights.len() {
+            lctree.make_tree(weights[i]);
+        }
+
+        // We form a link-cut tree from the following rooted tree
+        // (the numbers in parentheses are the weights of the nodes):
+        //           0(9)
+        //           /  \
+        //         1(1)  5(2)
+        //        /   \    \
+        //      2(8)  3(0) 6(4)
+        //      /             \
+        //    4(6)            7(3)
+        //                    /  \
+        //                  8(7) 9(5)
+        lctree.link(1, 0);
+        lctree.link(2, 1);
+        lctree.link(3, 1);
+        lctree.link(4, 2);
+        lctree.link(5, 0);
+        lctree.link(6, 5);
+        lctree.link(7, 6);
+        lctree.link(8, 7);
+        lctree.link(9, 7);
+
+        // We check the node index with max weight in the path from each node to the root:
+        assert_eq!(lctree.path(4, 5).min_weight_idx, 1);
+        assert_eq!(lctree.path(3, 6).min_weight_idx, 3);
+        assert_eq!(lctree.path(2, 7).min_weight_idx, 1);
+        assert_eq!(lctree.path(1, 8).min_weight_idx, 1);
+        assert_eq!(lctree.path(0, 9).min_weight_idx, 5);
+        assert_eq!(lctree.path(4, 3).min_weight_idx, 3);
+        assert_eq!(lctree.path(5, 7).min_weight_idx, 5);
+    }
+
+    #[test]
+    pub fn findsum() {
+        let mut lctree = super::LinkCutTree::findsum();
+        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
+        for i in 0..weights.len() {
+            lctree.make_tree(weights[i]);
+        }
+
+        // We form a link-cut tree from the following rooted tree
+        // (the numbers in parentheses are the weights of the nodes):
+        //           0(9)
+        //           /  \
+        //         1(1)  5(2)
+        //        /   \    \
+        //      2(8)  3(0) 6(4)
+        //      /             \
+        //    4(6)            7(3)
+        //                    /  \
+        //                  8(7) 9(5)
+        lctree.link(1, 0);
+        lctree.link(2, 1);
+        lctree.link(3, 1);
+        lctree.link(4, 2);
+        lctree.link(5, 0);
+        lctree.link(6, 5);
+        lctree.link(7, 6);
+        lctree.link(8, 7);
+        lctree.link(9, 7);
+
+        // We check the node index with max weight in the path from each node to the root:
+        assert_eq!(lctree.path(4, 5).sum, 26.);
+        assert_eq!(lctree.path(3, 6).sum, 16.);
+        assert_eq!(lctree.path(2, 7).sum, 27.);
+        assert_eq!(lctree.path(1, 8).sum, 26.);
+        assert_eq!(lctree.path(0, 9).sum, 23.);
+        assert_eq!(lctree.path(4, 3).sum, 15.);
+        assert_eq!(lctree.path(5, 7).sum, 9.);
     }
 }
