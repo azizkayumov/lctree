@@ -1,6 +1,4 @@
-use crate::node::Node;
-
-pub trait Path {
+pub trait Path: Copy + Clone {
     fn default(weight: f64, index: usize) -> Self;
     fn aggregate(&mut self, other: Self);
 }
@@ -61,15 +59,5 @@ impl Path for FindSum {
 
     fn aggregate(&mut self, other: Self) {
         self.sum += other.sum;
-    }
-}
-
-pub fn update<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
-    forest[node_idx].path = T::default(forest[node_idx].weight, node_idx);
-    if let Some(left_child) = forest[node_idx].left {
-        forest[node_idx].path.aggregate(forest[left_child].path);
-    }
-    if let Some(right_child) = forest[node_idx].right {
-        forest[node_idx].path.aggregate(forest[right_child].path);
     }
 }

@@ -7,7 +7,7 @@ pub enum Parent {
     Root,        // root of the tree
 }
 
-pub struct Node<T: Path + Copy + Clone> {
+pub struct Node<T: Path> {
     pub idx: usize,
     pub left: Option<usize>,
     pub right: Option<usize>,
@@ -18,7 +18,7 @@ pub struct Node<T: Path + Copy + Clone> {
     pub path: T,
 }
 
-impl<T: Path + Copy + Clone> Node<T> {
+impl<T: Path> Node<T> {
     pub fn new(idx: usize, weight: f64) -> Self {
         Node {
             idx,
@@ -31,6 +31,7 @@ impl<T: Path + Copy + Clone> Node<T> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn to_str(&self) -> String {
         let parent = match self.parent {
             Parent::Node(idx) => format!("Node({idx})"),

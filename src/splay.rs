@@ -1,20 +1,16 @@
 use crate::{
     node::{Node, Parent},
-    path::{update, Path},
+    path::Path,
 };
 
-/// Rotates the subtree rooted at `node_idx` to the left:
-///
-/// # Panics
-/// Panics if `node_idx` is out of bounds or if `node_idx` does not have a right child.
-///
-/// Example:
+// Rotates the subtree rooted at `node_idx` to the left:
+//  For ex., left rotation on '0':
 //         0                2
 //        / \       =>     / \
 //       1   2            0   4
 //          / \          / \
 //         3   4        1   3
-fn rotate_left<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
+fn rotate_left<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     assert!(
         node_idx < forest.len(),
         "rotate_left: node_idx out of bounds"
@@ -47,18 +43,14 @@ fn rotate_left<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) 
     update(forest, right_child);
 }
 
-/// Rotates the subtree rooted at `node_idx` to the right:
-///
-/// # Panics
-/// Panics if `node_idx` is out of bounds or if `node_idx` does not have a left child.
-///
-//  Example:
+// Rotates the subtree rooted at `node_idx` to the right:
+//  For ex., right rotation on '0':
 //         0                1
 //        / \      =>      / \
 //       1   4            2   0
 //      / \                  / \
 //     2   3                3   4
-fn rotate_right<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
+fn rotate_right<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     assert!(
         node_idx < forest.len(),
         "rotate_right: node_idx out of bounds"
@@ -91,15 +83,8 @@ fn rotate_right<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize)
     update(forest, left_child);
 }
 
-/// Rotates the parent of `node_idx` to the right or left, depending on the relationship between:
-///
-/// # Panics
-/// Panics if `node_idx` is out of bounds or if `node_idx` does not have a parent.
-//  Example:
-//    0                1
-//   /        =>        \
-//  1                    0
-fn rotate<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
+// Rotates the parent of `node_idx` to the right or left, depending on the relationship between.
+fn rotate<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     assert!(node_idx < forest.len(), "rotate: node_idx out of bounds");
     assert!(
         matches!(forest[node_idx].parent, Parent::Node(_)),
@@ -115,16 +100,14 @@ fn rotate<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
     }
 }
 
-/// Splays the subtree rooted at `node_idx`, making it the new root of the tree.
-///
-/// # Examples:
-///  splaying on '2':
-///   0                  2
-///    \       =>       / \
-///     1              0   1
-///    /
-///   2
-pub fn splay<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
+// Splays the subtree rooted at `node_idx`, making it the new root of the tree.
+//  For ex., splaying on '2':
+//   0                  2
+//    \       =>       / \
+//     1              0   1
+//    /
+//   2
+pub fn splay<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     while let Parent::Node(parent_idx) = forest[node_idx].parent {
         if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
             unflip(forest, grandparent_idx);
@@ -152,9 +135,9 @@ pub fn splay<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
     unflip(forest, node_idx);
 }
 
-/// Unflips the subtree rooted at `node_idx`, swapping the left and right children.
-/// The children's `flipped` flag is also toggled to propogate the change down the tree.
-pub fn unflip<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
+// Unflips the subtree rooted at `node_idx`, swapping the left and right children.
+// The children's `flipped` flag is also toggled to propogate the change down the tree.
+pub fn unflip<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     if forest[node_idx].flipped {
         forest[node_idx].flipped = false;
         std::mem::swap(&mut forest[node_idx].left, &mut forest[node_idx].right);
@@ -164,6 +147,17 @@ pub fn unflip<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
         if let Some(right_child) = forest[node_idx].right {
             forest[right_child].flipped ^= true;
         }
+    }
+}
+
+// Updates the path aggregate information for the subtree rooted at `node_idx`.
+pub fn update<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
+    forest[node_idx].path = T::default(forest[node_idx].weight, node_idx);
+    if let Some(left_child) = forest[node_idx].left {
+        forest[node_idx].path.aggregate(forest[left_child].path);
+    }
+    if let Some(right_child) = forest[node_idx].right {
+        forest[node_idx].path.aggregate(forest[right_child].path);
     }
 }
 

@@ -18,7 +18,7 @@ fn main() {
     // 2   3   5
     //        /
     //       6
-    let mut lctree = lctree::LinkCutTree::new();
+    let mut lctree = lctree::LinkCutTree::default();
     for i in 0..7 {
         lctree.make_tree(i as f64);
     }
