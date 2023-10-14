@@ -6,7 +6,7 @@ Rust implementation of [Link-cut tree](https://dl.acm.org/doi/10.1145/253262.253
 * `link(v, w)`: creates an edge between nodes `v` and `w`.
 * `cut(v, w)`: removes the edge between nodes `v` and `w`.
 * `connected(v, w)`: returns `true` if nodes `v` and `w` are in the same tree.
-* `path(v, w)`: perform calculations on a path between nodes `v` and `w`.
+* `path(v, w)`: performs calculations on a path between nodes `v` and `w`.
 
 ## Usage
 This example shows how to link and cut edges:
