@@ -1,3 +1,5 @@
+use crate::path::Path;
+
 #[derive(Copy, Clone)]
 pub enum Parent {
     Node(usize), // parent node in the tree
@@ -5,7 +7,7 @@ pub enum Parent {
     Root,        // root of the tree
 }
 
-pub struct Node {
+pub struct Node<T: Path> {
     pub idx: usize,
     pub left: Option<usize>,
     pub right: Option<usize>,
@@ -13,10 +15,10 @@ pub struct Node {
     pub flipped: bool,
     // for path aggregation:
     pub weight: f64,
-    pub max_weight_idx: usize,
+    pub path: T,
 }
 
-impl Node {
+impl<T: Path> Node<T> {
     pub fn new(idx: usize, weight: f64) -> Self {
         Node {
             idx,
@@ -25,10 +27,11 @@ impl Node {
             parent: Parent::Root,
             flipped: false,
             weight,
-            max_weight_idx: idx,
+            path: T::default(weight, idx),
         }
     }
 
+    #[allow(dead_code)]
     pub fn to_str(&self) -> String {
         let parent = match self.parent {
             Parent::Node(idx) => format!("Node({idx})"),
@@ -36,8 +39,8 @@ impl Node {
             Parent::Root => "Root".to_string(),
         };
         format!(
-            "Node {{ idx: {}, left: {:?}, right: {:?}, parent: {parent:?}, max_weight_idx: {} }}",
-            self.idx, self.left, self.right, self.max_weight_idx
+            "Node {{ idx: {}, left: {:?}, right: {:?}, parent: {parent:?}}}",
+            self.idx, self.left, self.right
         )
     }
 }

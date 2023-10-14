@@ -2,9 +2,13 @@
 [![crates.io](https://img.shields.io/crates/v/lctree)](https://crates.io/crates/lctree)
 
 # lctree
-Rust implementation of [Link-Cut-Tree](https://dl.acm.org/doi/10.1145/253262.253347](https://dl.acm.org/doi/pdf/10.1145/800076.802464)): self-balancing data structure to maintain a forest of rooted trees through dynamically linking and cutting edges.
+Rust implementation of [Link-cut tree](https://dl.acm.org/doi/10.1145/253262.253347](https://dl.acm.org/doi/pdf/10.1145/800076.802464)): self-balancing data structure to maintain a dynamic forest of (un)rooted trees under the following operations that take `O(logn)` amortized time:
+* `link(v, w)`: creates an edge between nodes `v` and `w`.
+* `cut(v, w)`: removes the edge between nodes `v` and `w`.
+* `connected(v, w)`: returns `true` if nodes `v` and `w` are in the same tree.
+* `path(v, w)`: perform calculations on a path between nodes `v` and `w`.
 
-## Example
+## Usage
 This example shows how to link and cut edges:
 ```rust
 use lctree::LinkCutTree;
@@ -18,7 +22,7 @@ fn main() {
     // 2   3   5
     //        /
     //       6
-    let mut lctree = lctree::LinkCutTree::new();
+    let mut lctree = lctree::LinkCutTree::default();
     for i in 0..7 {
         lctree.make_tree(i as f64);
     }
@@ -48,21 +52,92 @@ fn main() {
     assert!(!lctree.connected(2, 6)); // not connected anymore
 }
 ```
+Advanced usage include operations on paths:
+<details>
+<summary>Common path aggregates</summary>
+
+Various kinds of calculations can be performed on a path between two nodes, provided as `findmax`, `findmin`, or `findsum`:
+
+```rust
+use lctree::{LinkCutTree, FindMax, FindMin, FindSum};
+
+fn main() {
+    // We form a link-cut tree from the following rooted tree
+    // (the numbers in parentheses are the weights of the nodes):
+    //           0(9)
+    //           /  \
+    //         1(1)  4(2)
+    //        /   \    \
+    //      2(8)  3(0)  5(4)
+    //                  /
+    //                6(3)
+
+    // Replace FindMax with FindMin or FindSum, depending on your usage:
+    let mut lctree: LinkCutTree<FindMax> = lctree::LinkCutTree::new();
+    let weights = [9.0, 1.0, 8.0, 0.0, 2.0, 4.0, 3.0];
+    for i in 0..weights.len() {
+        lctree.make_tree(weights[i]);
+    }
+    lctree.link(1, 0);
+    lctree.link(2, 1);
+    lctree.link(3, 1);
+    lctree.link(4, 0);
+    lctree.link(5, 4);
+    lctree.link(6, 5);
+
+    // We find the node with max weight on the path between 2 to 6,
+    // where 0 has the maximum weight of 9.0:
+    assert_eq!(lctree.path(2, 6).max_weight, 9.0);
+    assert_eq!(lctree.path(2, 6).max_weight_idx, 0);
+}
+```
+</details>
+
+<details>
+<summary>Custom path aggregate function</summary>
+    
+A custom path aggregate function can be defined by using the `Path` trait:
+    
+```rust
+use lctree::{LinkCutTree, Path};
+
+#[derive(Copy, Clone)]
+pub struct FindXor {
+    pub xor: u64,
+}
+
+impl Path for FindXor {
+    fn default(weight: f64, _: usize) -> Self {
+        FindXor {
+            xor: weight as u64,
+        }
+    }
+
+    fn aggregate(&mut self, other: Self) {
+        self.xor ^= other.xor;
+    }
+}
+
+fn main() {
+    let mut lctree: LinkCutTree<FindXor> = LinkCutTree::new();
+    ...
+}
+```
+
+</details>
+
+
+## Credits
+This crate applies the core concepts and ideas presented in the following sources:
+- "A data structure for dynamic trees" by D. Sleator and R. E. TarJan ([published](https://dl.acm.org/doi/10.1145/800076.802464) in STOC '81).
+- Link-cut tree [source code](https://codeforces.com/contest/117/submission/860934) by the author D. Sleator.
+- MIT's lecture on dynamic graphs: [lecture](https://www.youtube.com/watch?v=XZLN6NxEQWo), [notes](https://courses.csail.mit.edu/6.851/spring12/scribe/L19.pdf), and [source code](https://github.com/6851-2021/rust-link-cut-tree).
+- Helpful blog posts on the concepts of [rooted trees](https://codeforces.com/blog/entry/80383), [rerooting](https://codeforces.com/blog/entry/75885) and [splay operations](https://www.youtube.com/watch?v=2eCKpEmkxIc).
 
 ## License
-
-Copyright 2019-2024 Kayumov Abduaziz.
-
-Licensed under [Apache License, Version 2.0][apache-license] (the "License");
-you may not use this crate except in compliance with the License.
-
-Unless required by applicable law or agreed to in writing, software distributed
-under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-CONDITIONS OF ANY KIND, either express or implied. See [LICENSE](LICENSE) for
-the specific language governing permissions and limitations under the License.
+This project is licensed under the [Apache License, Version 2.0](LICENSE.md) - See the [LICENSE.md](https://github.com/azizkayumov/lctree/blob/main/LICENSE) file for details.
 
 ## Contribution
-
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the [Apache-2.0
 license][apache-license], shall be licensed as above, without any additional

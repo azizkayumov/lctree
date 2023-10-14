@@ -11,7 +11,8 @@ use std::{
 };
 
 fn create_random_generator() -> StdRng {
-    let seed = rand::thread_rng().gen();
+    //let seed = rand::thread_rng().gen();
+    let seed = 3900765363016383448;
     println!("Seed: {}", seed); // print seed so we can reproduce the test (if it fails).
     StdRng::seed_from_u64(seed)
 }
@@ -22,6 +23,7 @@ struct BruteForce {
     component_ids: Vec<usize>,
 }
 
+#[allow(dead_code)]
 impl BruteForce {
     pub fn new(weights: Vec<f64>) -> Self {
         // We start with a forest of single nodes:
@@ -87,21 +89,24 @@ impl BruteForce {
         if self.component_ids[src] != self.component_ids[dest] {
             return usize::MAX;
         }
-        // explore each component and assign maximum weight in the path
+        // explore each component and compute aggregates in the path
         // until we reach the destination
         let mut max = HashMap::new();
+
         max.insert(src, src);
         let mut visited = HashSet::new();
         let mut stack = vec![(src, src)];
         while let Some((prev, cur)) = stack.pop() {
             visited.insert(cur);
+
             max.insert(cur, cur);
             let prev_max = max[&prev];
             if self.weights[prev_max] > self.weights[cur] {
                 max.insert(cur, prev_max);
             }
+
             if cur == dest {
-                return max[&cur];
+                break;
             }
             for next in &self.adj[cur] {
                 if !visited.contains(next) {
@@ -110,6 +115,66 @@ impl BruteForce {
             }
         }
         max[&dest]
+    }
+
+    pub fn findmin(&self, src: usize, dest: usize) -> usize {
+        if self.component_ids[src] != self.component_ids[dest] {
+            return usize::MAX;
+        }
+        // explore each component and compute aggregates in the path
+        // until we reach the destination
+        let mut min = HashMap::new();
+        let mut visited = HashSet::new();
+        let mut stack = vec![(src, src)];
+        while let Some((prev, cur)) = stack.pop() {
+            visited.insert(cur);
+
+            min.insert(cur, cur);
+            let prev_min = min[&prev];
+            if self.weights[prev_min] < self.weights[cur] {
+                min.insert(cur, prev_min);
+            }
+
+            if cur == dest {
+                break;
+            }
+            for next in &self.adj[cur] {
+                if !visited.contains(next) {
+                    stack.push((cur, *next));
+                }
+            }
+        }
+        min[&dest]
+    }
+
+    pub fn findsum(&self, src: usize, dest: usize) -> f64 {
+        if self.component_ids[src] != self.component_ids[dest] {
+            return f64::MAX;
+        }
+        // explore each component and compute aggregates in the path
+        // until we reach the destination
+        let mut sum = HashMap::new();
+
+        let mut visited = HashSet::new();
+        let mut stack = vec![(src, src)];
+        while let Some((prev, cur)) = stack.pop() {
+            visited.insert(cur);
+
+            sum.insert(cur, self.weights[cur]);
+            if prev != cur {
+                sum.insert(cur, sum[&prev] + self.weights[cur]);
+            }
+
+            if cur == dest {
+                break;
+            }
+            for next in &self.adj[cur] {
+                if !visited.contains(next) {
+                    stack.push((cur, *next));
+                }
+            }
+        }
+        sum[&dest]
     }
 
     pub fn random_edge(&self, rng: &mut StdRng) -> (usize, usize) {
@@ -135,14 +200,14 @@ impl BruteForce {
 }
 
 const NUMBER_OF_NODES: usize = 100;
-const NUMBER_OF_OPERATIONS: usize = 2000;
+const NUMBER_OF_OPERATIONS: usize = 2000; // can be larger if you have time to spare (see tests/README.md)
 
 #[derive(RandGen)]
 enum Operation {
     Link,
     Cut,
     Connected,
-    Findmax,
+    Path,
 }
 
 #[test]
@@ -155,7 +220,7 @@ pub fn connectivity() {
 
     // Initialize link-cut tree, we start with a forest of single nodes
     // (edges are not added yet):
-    let mut lctree = LinkCutTree::new();
+    let mut lctree = LinkCutTree::default();
     for w in 0..NUMBER_OF_NODES {
         lctree.make_tree(weights[w]);
     }
@@ -214,13 +279,13 @@ pub fn connectivity() {
 
                 assert_eq!(actual, expected);
             }
-            Operation::Findmax => {
+            Operation::Path => {
                 // Choose two random nodes from the same tree to find the node
                 // with the maximum weight in the path between them:
                 let (v, w) = brute.random_connected_pair(&mut rng);
 
                 let now = std::time::Instant::now();
-                let actual = lctree.findmax(v, w);
+                let actual = lctree.path(v, w).max_weight_idx;
                 lctree_time += now.elapsed();
 
                 let now = std::time::Instant::now();

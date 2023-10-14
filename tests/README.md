@@ -1,5 +1,5 @@
 ### Benchmark
-This benchmark report contains overall running time analysis of Link-Cut trees in comparison to its brute-force counterpart.
+This benchmark report contains overall running time analysis of Link-Cut trees in comparison to its brute-force counterpart (MBP 14" 16Gb).
 Each test performs a number of random operations (`link(v, w)`, `cut(v, w)`, `connected(v, w)` or `findmax(v, w)`) on forests of varying sizes.
 
 | # Nodes     | # Operations    | Random seed           | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lib.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/tests/test_random.rs)  | 
