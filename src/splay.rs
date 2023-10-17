@@ -121,18 +121,18 @@ pub fn splay<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
             {
                 // zig-zig (same direction):
                 rotate(forest, parent_idx);
-                rotate(forest, node_idx);
             } else {
                 // zig-zag:
                 rotate(forest, node_idx);
-                rotate(forest, node_idx);
             }
+            rotate(forest, node_idx);
         } else {
             // zig
             rotate(forest, node_idx);
         }
     }
     unflip(forest, node_idx);
+    update(forest, node_idx);
 }
 
 // Unflips the subtree rooted at `node_idx`, swapping the left and right children.
