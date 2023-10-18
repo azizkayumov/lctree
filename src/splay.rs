@@ -37,10 +37,6 @@ fn rotate_left<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     if let Some(new_right_child) = forest[node_idx].right {
         forest[new_right_child].parent = Parent::Node(node_idx);
     }
-
-    // update aggregate information
-    update(forest, node_idx);
-    update(forest, right_child);
 }
 
 // Rotates the subtree rooted at `node_idx` to the right:
@@ -77,10 +73,6 @@ fn rotate_right<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     if let Some(new_left_child) = forest[node_idx].left {
         forest[new_left_child].parent = Parent::Node(node_idx);
     }
-
-    // update aggregate information
-    update(forest, node_idx);
-    update(forest, left_child);
 }
 
 // Rotates the parent of `node_idx` to the right or left, depending on the relationship between.
@@ -97,6 +89,8 @@ fn rotate<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
         } else {
             rotate_left(forest, parent_idx);
         }
+        update(forest, parent_idx);
+        update(forest, node_idx);
     }
 }
 
@@ -125,11 +119,9 @@ pub fn splay<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
                 // zig-zag:
                 rotate(forest, node_idx);
             }
-            rotate(forest, node_idx);
-        } else {
-            // zig
-            rotate(forest, node_idx);
         }
+        // zig
+        rotate(forest, node_idx);
     }
     unflip(forest, node_idx);
     update(forest, node_idx);
