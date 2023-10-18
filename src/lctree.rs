@@ -1,7 +1,7 @@
 use crate::{
     node::{Node, Parent},
     path::{FindMax, Path},
-    splay::{normalize, splay},
+    splay::{normalize, splay, update},
 };
 
 pub struct LinkCutTree<T: Path> {
@@ -26,6 +26,7 @@ impl<T: Path> LinkCutTree<T> {
         if let Some(right_idx) = self.forest[v].right {
             self.forest[v].right = None;
             self.forest[right_idx].parent = Parent::Path(v);
+            update(&mut self.forest, v);
         }
 
         while let Parent::Path(path_idx) = self.forest[v].parent {
@@ -42,7 +43,6 @@ impl<T: Path> LinkCutTree<T> {
 
             splay(&mut self.forest, v); // just a rotation
         }
-        splay(&mut self.forest, v);
     }
 
     /// Makes v the root of its represented tree by flipping the path from v to the root.
