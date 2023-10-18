@@ -84,13 +84,14 @@ fn rotate<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     );
 
     if let Parent::Node(parent_idx) = forest[node_idx].parent {
+        normalize(forest, parent_idx);
+        normalize(forest, node_idx);
         if forest[parent_idx].left == Some(node_idx) {
             rotate_right(forest, parent_idx);
         } else {
             rotate_left(forest, parent_idx);
         }
         update(forest, parent_idx);
-        update(forest, node_idx);
     }
 }
 
@@ -103,12 +104,6 @@ fn rotate<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
 //   2
 pub fn splay<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     while let Parent::Node(parent_idx) = forest[node_idx].parent {
-        if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
-            unflip(forest, grandparent_idx);
-        }
-        unflip(forest, parent_idx);
-        unflip(forest, node_idx);
-
         if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
             if (forest[grandparent_idx].left == Some(parent_idx))
                 == (forest[parent_idx].left == Some(node_idx))
@@ -123,13 +118,13 @@ pub fn splay<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
         // zig
         rotate(forest, node_idx);
     }
-    unflip(forest, node_idx);
+    normalize(forest, node_idx);
     update(forest, node_idx);
 }
 
 // Unflips the subtree rooted at `node_idx`, swapping the left and right children.
 // The children's `flipped` flag is also toggled to propogate the change down the tree.
-pub fn unflip<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
+pub fn normalize<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     if forest[node_idx].flipped {
         forest[node_idx].flipped = false;
         std::mem::swap(&mut forest[node_idx].left, &mut forest[node_idx].right);
@@ -155,7 +150,7 @@ pub fn update<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
 
 #[cfg(test)]
 mod tests {
-    use super::{rotate, rotate_left, rotate_right, unflip};
+    use super::{normalize, rotate, rotate_left, rotate_right};
     use crate::{
         node::{self, Node},
         path::FindMax,
@@ -360,7 +355,7 @@ mod tests {
         forest[1].parent = node::Parent::Node(0);
         forest[2].parent = node::Parent::Node(0);
         forest[0].flipped = true;
-        unflip(&mut forest, 0);
+        normalize(&mut forest, 0);
         assert!(!forest[0].flipped);
         assert!(forest[1].flipped);
         assert!(forest[2].flipped);

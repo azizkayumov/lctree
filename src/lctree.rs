@@ -1,7 +1,7 @@
 use crate::{
     node::{Node, Parent},
-    path::{FindMax, FindMin, FindSum, Path},
-    splay::{splay, unflip},
+    path::{FindMax, Path},
+    splay::{normalize, splay},
 };
 
 pub struct LinkCutTree<T: Path> {
@@ -40,7 +40,7 @@ impl<T: Path> LinkCutTree<T> {
             self.forest[path_idx].right = Some(v);
             self.forest[v].parent = Parent::Node(path_idx);
 
-            splay(&mut self.forest, v);
+            splay(&mut self.forest, v); // just a rotation
         }
         splay(&mut self.forest, v);
     }
@@ -49,7 +49,7 @@ impl<T: Path> LinkCutTree<T> {
     fn reroot(&mut self, v: usize) {
         self.access(v);
         self.forest[v].flipped ^= true;
-        unflip(&mut self.forest, v);
+        normalize(&mut self.forest, v);
     }
 
     /// Checks if v and w are connected in the forest.
@@ -112,34 +112,13 @@ impl Default for LinkCutTree<FindMax> {
     }
 }
 
-impl LinkCutTree<FindMax> {
-    #[must_use]
-    pub fn findmax() -> Self {
-        Self::new()
-    }
-}
-
-impl LinkCutTree<FindMin> {
-    #[must_use]
-    pub fn findmin() -> Self {
-        Self::new()
-    }
-}
-
-impl LinkCutTree<FindSum> {
-    #[must_use]
-    pub fn findsum() -> Self {
-        Self::new()
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::node::Parent;
+    use crate::{node::Parent, FindMin, FindSum, LinkCutTree};
 
     #[test]
     pub fn access() {
-        let mut tree = super::LinkCutTree::findmax();
+        let mut tree = super::LinkCutTree::default();
         for i in 0..4 {
             tree.make_tree(i as f64);
         }
@@ -425,12 +404,6 @@ mod tests {
 
     #[test]
     pub fn findmax() {
-        let mut lctree = super::LinkCutTree::default();
-        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
-        for i in 0..weights.len() {
-            lctree.make_tree(weights[i]);
-        }
-
         // We form a link-cut tree from the following rooted tree
         // (the numbers in parentheses are the weights of the nodes):
         //           0(9)
@@ -442,6 +415,11 @@ mod tests {
         //    4(6)            7(3)
         //                    /  \
         //                  8(7) 9(5)
+        let mut lctree = super::LinkCutTree::default();
+        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
+        for i in 0..weights.len() {
+            lctree.make_tree(weights[i]);
+        }
         lctree.link(1, 0);
         lctree.link(2, 1);
         lctree.link(3, 1);
@@ -464,12 +442,6 @@ mod tests {
 
     #[test]
     pub fn findmin() {
-        let mut lctree = super::LinkCutTree::findmin();
-        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
-        for i in 0..weights.len() {
-            lctree.make_tree(weights[i]);
-        }
-
         // We form a link-cut tree from the following rooted tree
         // (the numbers in parentheses are the weights of the nodes):
         //           0(9)
@@ -481,6 +453,11 @@ mod tests {
         //    4(6)            7(3)
         //                    /  \
         //                  8(7) 9(5)
+        let mut lctree: LinkCutTree<FindMin> = super::LinkCutTree::new();
+        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
+        for i in 0..weights.len() {
+            lctree.make_tree(weights[i]);
+        }
         lctree.link(1, 0);
         lctree.link(2, 1);
         lctree.link(3, 1);
@@ -503,12 +480,6 @@ mod tests {
 
     #[test]
     pub fn findsum() {
-        let mut lctree = super::LinkCutTree::findsum();
-        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
-        for i in 0..weights.len() {
-            lctree.make_tree(weights[i]);
-        }
-
         // We form a link-cut tree from the following rooted tree
         // (the numbers in parentheses are the weights of the nodes):
         //           0(9)
@@ -520,6 +491,11 @@ mod tests {
         //    4(6)            7(3)
         //                    /  \
         //                  8(7) 9(5)
+        let mut lctree: LinkCutTree<FindSum> = super::LinkCutTree::new();
+        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
+        for i in 0..weights.len() {
+            lctree.make_tree(weights[i]);
+        }
         lctree.link(1, 0);
         lctree.link(2, 1);
         lctree.link(3, 1);
