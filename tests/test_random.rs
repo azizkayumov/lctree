@@ -11,8 +11,7 @@ use std::{
 };
 
 fn create_random_generator() -> StdRng {
-    //let seed = rand::thread_rng().gen();
-    let seed = 3900765363016383448;
+    let seed = rand::thread_rng().gen();
     println!("Seed: {}", seed); // print seed so we can reproduce the test (if it fails).
     StdRng::seed_from_u64(seed)
 }
@@ -199,8 +198,8 @@ impl BruteForce {
     }
 }
 
-const NUMBER_OF_NODES: usize = 100;
-const NUMBER_OF_OPERATIONS: usize = 2000; // can be larger if you have time to spare (see tests/README.md)
+const NUMBER_OF_NODES: usize = 1000;
+const NUMBER_OF_OPERATIONS: usize = 5_000_000; // can be larger if you have time to spare (see tests/README.md)
 
 #[derive(RandGen)]
 enum Operation {
@@ -229,8 +228,10 @@ pub fn connectivity() {
     let mut brute = BruteForce::new(weights.clone());
 
     // Time the operations:
-    let mut lctree_time = Duration::new(0, 0);
-    let mut brute_time = Duration::new(0, 0);
+    let operations = ["link", "cut", "connected", "path"];
+    let mut count_operations = [0; 4];
+    let mut lctree_time = [Duration::new(0, 0); 4];
+    let mut brute_time = [Duration::new(0, 0); 4];
 
     // Perform random operations: link, cut, or connected:
     for _ in 0..NUMBER_OF_OPERATIONS {
@@ -243,11 +244,13 @@ pub fn connectivity() {
 
                 let now = std::time::Instant::now();
                 lctree.link(v, w);
-                lctree_time += now.elapsed();
+                lctree_time[0] += now.elapsed();
 
                 let now = std::time::Instant::now();
                 brute.link(v, w);
-                brute_time += now.elapsed();
+                brute_time[0] += now.elapsed();
+
+                count_operations[0] += 1;
             }
             Operation::Cut => {
                 // Choose a random existing edge to cut:
@@ -258,11 +261,13 @@ pub fn connectivity() {
 
                 let now = std::time::Instant::now();
                 lctree.cut(v, w);
-                lctree_time += now.elapsed();
+                lctree_time[1] += now.elapsed();
 
                 let now = std::time::Instant::now();
                 brute.cut(v, w);
-                brute_time += now.elapsed();
+                brute_time[1] += now.elapsed();
+
+                count_operations[1] += 1;
             }
             Operation::Connected => {
                 // Choose two random nodes to check if they are connected:
@@ -271,12 +276,13 @@ pub fn connectivity() {
 
                 let now = std::time::Instant::now();
                 let actual = lctree.connected(v, w);
-                lctree_time += now.elapsed();
+                lctree_time[2] += now.elapsed();
 
                 let now = std::time::Instant::now();
                 let expected = brute.connected(v, w);
-                brute_time += now.elapsed();
+                brute_time[2] += now.elapsed();
 
+                count_operations[2] += 1;
                 assert_eq!(actual, expected);
             }
             Operation::Path => {
@@ -286,12 +292,13 @@ pub fn connectivity() {
 
                 let now = std::time::Instant::now();
                 let actual = lctree.path(v, w).max_weight_idx;
-                lctree_time += now.elapsed();
+                lctree_time[3] += now.elapsed();
 
                 let now = std::time::Instant::now();
                 let expected = brute.findmax(v, w);
-                brute_time += now.elapsed();
+                brute_time[3] += now.elapsed();
 
+                count_operations[3] += 1;
                 assert_eq!(actual, expected);
             }
         }
@@ -299,6 +306,21 @@ pub fn connectivity() {
 
     println!("Number of nodes:       {}", NUMBER_OF_NODES);
     println!("Number of operations:  {}", NUMBER_OF_OPERATIONS);
-    println!("Link-cut tree time:    {:?}", lctree_time);
-    println!("Brute force time:      {:?}", brute_time);
+    println!("------------------------------------------");
+    println!(
+        "{:10}    {:10}    {:10}    {:10}",
+        "Operation", "Count", "lctree", "brute"
+    );
+    for (i, operation) in operations.iter().enumerate() {
+        let lctree_op_time = format!("{:?}", lctree_time[i]);
+        let brute_op_time = format!("{:?}", brute_time[i]);
+        let count = format!("{}", count_operations[i]);
+        println!(
+            "{:10}    {:10}    {:10}    {:10}",
+            operation, count, lctree_op_time, brute_op_time
+        );
+    }
+    println!("------------------------------------------");
+    println!("lctree:    {:?}", lctree_time.iter().sum::<Duration>());
+    println!("brute:     {:?}", brute_time.iter().sum::<Duration>());
 }
