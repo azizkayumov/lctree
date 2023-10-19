@@ -37,10 +37,6 @@ fn rotate_left<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     if let Some(new_right_child) = forest[node_idx].right {
         forest[new_right_child].parent = Parent::Node(node_idx);
     }
-
-    // update aggregate information
-    update(forest, node_idx);
-    update(forest, right_child);
 }
 
 // Rotates the subtree rooted at `node_idx` to the right:
@@ -77,10 +73,6 @@ fn rotate_right<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     if let Some(new_left_child) = forest[node_idx].left {
         forest[new_left_child].parent = Parent::Node(node_idx);
     }
-
-    // update aggregate information
-    update(forest, node_idx);
-    update(forest, left_child);
 }
 
 // Rotates the parent of `node_idx` to the right or left, depending on the relationship between.
@@ -92,11 +84,14 @@ fn rotate<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     );
 
     if let Parent::Node(parent_idx) = forest[node_idx].parent {
+        normalize(forest, parent_idx);
+        normalize(forest, node_idx);
         if forest[parent_idx].left == Some(node_idx) {
             rotate_right(forest, parent_idx);
         } else {
             rotate_left(forest, parent_idx);
         }
+        update(forest, parent_idx);
     }
 }
 
@@ -110,34 +105,26 @@ fn rotate<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
 pub fn splay<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     while let Parent::Node(parent_idx) = forest[node_idx].parent {
         if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
-            unflip(forest, grandparent_idx);
-        }
-        unflip(forest, parent_idx);
-        unflip(forest, node_idx);
-
-        if let Parent::Node(grandparent_idx) = forest[parent_idx].parent {
             if (forest[grandparent_idx].left == Some(parent_idx))
                 == (forest[parent_idx].left == Some(node_idx))
             {
                 // zig-zig (same direction):
                 rotate(forest, parent_idx);
-                rotate(forest, node_idx);
             } else {
                 // zig-zag:
                 rotate(forest, node_idx);
-                rotate(forest, node_idx);
             }
-        } else {
-            // zig
-            rotate(forest, node_idx);
         }
+        // zig
+        rotate(forest, node_idx);
     }
-    unflip(forest, node_idx);
+    normalize(forest, node_idx);
+    update(forest, node_idx);
 }
 
 // Unflips the subtree rooted at `node_idx`, swapping the left and right children.
 // The children's `flipped` flag is also toggled to propogate the change down the tree.
-pub fn unflip<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
+pub fn normalize<T: Path>(forest: &mut [Node<T>], node_idx: usize) {
     if forest[node_idx].flipped {
         forest[node_idx].flipped = false;
         std::mem::swap(&mut forest[node_idx].left, &mut forest[node_idx].right);
@@ -163,7 +150,7 @@ pub fn update<T: Path + Copy + Clone>(forest: &mut [Node<T>], node_idx: usize) {
 
 #[cfg(test)]
 mod tests {
-    use super::{rotate, rotate_left, rotate_right, unflip};
+    use super::{normalize, rotate, rotate_left, rotate_right};
     use crate::{
         node::{self, Node},
         path::FindMax,
@@ -368,7 +355,7 @@ mod tests {
         forest[1].parent = node::Parent::Node(0);
         forest[2].parent = node::Parent::Node(0);
         forest[0].flipped = true;
-        unflip(&mut forest, 0);
+        normalize(&mut forest, 0);
         assert!(!forest[0].flipped);
         assert!(forest[1].flipped);
         assert!(forest[2].flipped);

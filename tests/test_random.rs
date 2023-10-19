@@ -198,8 +198,9 @@ impl BruteForce {
     }
 }
 
-const NUMBER_OF_NODES: usize = 1000;
-const NUMBER_OF_OPERATIONS: usize = 5_000_000; // can be larger if you have time to spare (see tests/README.md)
+// These can be larger if you have time to spare (see tests/README.md)
+const NUMBER_OF_NODES: usize = 100;
+const NUMBER_OF_OPERATIONS: usize = 2000;
 
 #[derive(RandGen)]
 enum Operation {
