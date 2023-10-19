@@ -11,8 +11,7 @@ use std::{
 };
 
 fn create_random_generator() -> StdRng {
-    //let seed = rand::thread_rng().gen();
-    let seed = 3900765363016383448;
+    let seed = rand::thread_rng().gen();
     println!("Seed: {}", seed); // print seed so we can reproduce the test (if it fails).
     StdRng::seed_from_u64(seed)
 }
@@ -199,8 +198,9 @@ impl BruteForce {
     }
 }
 
+// These can be larger if you have time to spare (see tests/README.md)
 const NUMBER_OF_NODES: usize = 100;
-const NUMBER_OF_OPERATIONS: usize = 2000; // can be larger if you have time to spare (see tests/README.md)
+const NUMBER_OF_OPERATIONS: usize = 2000;
 
 #[derive(RandGen)]
 enum Operation {
