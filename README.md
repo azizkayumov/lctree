@@ -2,7 +2,7 @@
 [![crates.io](https://img.shields.io/crates/v/lctree)](https://crates.io/crates/lctree)
 
 # lctree
-Rust implementation of [Link-cut tree](https://dl.acm.org/doi/10.1145/253262.253347](https://dl.acm.org/doi/pdf/10.1145/800076.802464)): self-balancing data structure to maintain a dynamic forest of (un)rooted trees under the following operations that take `O(logn)` amortized time:
+Rust implementation of [Link-cut tree](https://dl.acm.org/doi/pdf/10.1145/800076.802464): self-balancing data structure to maintain a dynamic forest of (un)rooted trees under the following operations that take `O(logn)` amortized time:
 * `link(v, w)`: creates an edge between nodes `v` and `w`.
 * `cut(v, w)`: removes the edge between nodes `v` and `w`.
 * `connected(v, w)`: returns `true` if nodes `v` and `w` are in the same tree.
