@@ -10,12 +10,14 @@ Each test performs a number of random operations (`link(v, w)`, `cut(v, w)`, `co
 | 500         | 2M              | 12719220817276010307  | 5.17505883s   | 303.150073635s  |
 | 1000        | 5M              | 16452801585435658354  | 14.711844242s | 1527.065366409s |
 
-The brute force solution takes  time for `link(v, w)` and `cut(v, w)` operations where `size(v)` or `size(w)` is the number of points connected to the point.
-Then, `connected(v, w)` query can be performed in a constant time.
-However, `path(v, w)` operation takes `O(size(v) + size(w))` where `size(v) + size(w) = n` in the worst-case scenario for the brute force.
-On the other hand, all of these operations take `O(logn)` amortized time in the case of Link-cut trees.
+The following table includes worst-case time complexity analysis of each operation for the brute-force solution and Link-cut-trees:
 
-The time complexity analysis can be observed in practice on the last experiment with 1000 nodes and 5M random operations:
+| Operation   |  link(v, w)  |  cut(v, w) |  connected(v, w)  |  path(v, w)  |
+| :---        | :---         | :---       |  :---             |  :---        |
+| [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)                     | `O(logn)`                   | `O(logn)`                    |  `O(logn)`  |  `O(logn)`              |
+| [brute-force](https://github.com/azizkayumov/lctree/blob/main/tests/test_random.rs)         | `O(min{size(v), size(w)})`  | `O(min{size(v), size(w)})`   |  `O(1)`     |  `O(size(v) + size(w))` |
+
+This time complexity analysis can be observed in practice on the last experiment with 1000 nodes and 5M random operations:
 
 | Operation   | Count   | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/tests/test_random.rs)  |
 | :---        | :---            | :---            | :---                  |
