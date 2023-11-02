@@ -1,5 +1,5 @@
 ### Benchmark
-The overall running time for performing a number of random operations (`link(v, w)`, `cut(v, w)`, `connected(v, w)` or `findmax(v, w)`) on forests of varying sizes (check benchmark details [here](https://github.com/azizkayumov/lctree/blob/main/tests/README.md)).
+The overall running time for performing a number of random operations (`link(v, w)`, `cut(v, w)`, `connected(v, w)` or `findmax(v, w)`) on forests of varying sizes.
 
 | # Nodes     | # Operations    | Random seed           | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/tests/test_random.rs)  | 
 | :---        | :---            | :---                  | :---          | :---            |
