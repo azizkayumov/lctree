@@ -126,6 +126,17 @@ fn main() {
 
 </details>
 
+## Benchmark
+This benchmark report contains overall running time analysis of Link-Cut trees in comparison to its brute-force counterpart (iMac 24", M1, 2021, 16Gb).
+Each test performs a number of random operations (`link(v, w)`, `cut(v, w)`, `connected(v, w)` or `findmax(v, w)`) on forests of varying sizes (check benchmark details [here](https://github.com/azizkayumov/lctree/blob/develop/tests/README.md)).
+
+| # Nodes     | # Operations    | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/tests/test_random.rs)  | 
+| :---        | :---            | :---          | :---            |
+| 100         | 10K             | 18.005544ms   | 291.587072ms    |
+| 100         | 100K            | 186.174183ms  | 3.055154731s    |
+| 100         | 1M              | 1.824378819s  | 30.510083671s   |
+| 500         | 2M              | 5.17505883s   | 303.150073635s  |
+| 1000        | 5M              | 14.711844242s | 1527.065366409s |
 
 ## Credits
 This crate applies the core concepts and ideas presented in the following sources:
