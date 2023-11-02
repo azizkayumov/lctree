@@ -1,6 +1,5 @@
 ### Benchmark
-This benchmark report contains overall running time analysis of Link-Cut trees in comparison to its brute-force counterpart (iMac 24", M1, 2021, 16Gb).
-Each test performs a number of random operations (`link(v, w)`, `cut(v, w)`, `connected(v, w)` or `findmax(v, w)`) on forests of varying sizes.
+The overall running time for performing a number of random operations (`link(v, w)`, `cut(v, w)`, `connected(v, w)` or `findmax(v, w)`) on forests of varying sizes (check benchmark details [here](https://github.com/azizkayumov/lctree/blob/main/tests/README.md)).
 
 | # Nodes     | # Operations    | Random seed           | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/tests/test_random.rs)  | 
 | :---        | :---            | :---                  | :---          | :---            |
@@ -17,7 +16,7 @@ The following table includes worst-case time complexity analysis of each operati
 | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)                     | `O(logn)`                   | `O(logn)`                    |  `O(logn)`  |  `O(logn)`              |
 | [brute-force](https://github.com/azizkayumov/lctree/blob/main/tests/test_random.rs)         | `O(min{size(v), size(w)})`  | `O(min{size(v), size(w)})`   |  `O(1)`     |  `O(size(v) + size(w))` |
 
-This time complexity analysis can be observed in practice on the last experiment with 1000 nodes and 5M random operations:
+This time complexity analysis can clearly be observed in practice on the last experiment with 1000 nodes and 5M random operations:
 
 | Operation   | Count   | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/tests/test_random.rs)  |
 | :---        | :---            | :---            | :---                  |
@@ -25,3 +24,7 @@ This time complexity analysis can be observed in practice on the last experiment
 | cut         | 1251768         | 3.694333793s    | 4.175882634s          |
 | connected   | 1250180         | 3.662950986s    | 79.612576ms           |
 | path        | 1248543         | 3.68330559s     | 1520.932589532s       |
+
+\* Benchmarks were run on iMac 24" M1 2021 16Gb.
+
+\* To reproduce these results, please refer to the `\tests` folder and run the random test by configuring its random seed, the number of nodes, and the number of operations.
