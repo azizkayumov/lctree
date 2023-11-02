@@ -77,8 +77,9 @@ impl<T: Path> LinkCutTree<T> {
         }
         // detach w from its parent (which is v)
         if let Some(left) = self.forest[w].left {
-            if left != v {
-                eprintln!("Error: no link between {v} and {w}"); // maybe this should be a panic?
+            if left != v || self.forest[v].right.is_some() {
+                // maybe this should be a panic?
+                eprintln!("Error: no link between {v} and {w}");
                 return;
             }
             self.forest[w].left = None;

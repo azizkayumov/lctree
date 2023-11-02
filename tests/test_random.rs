@@ -1,9 +1,5 @@
 use lctree::LinkCutTree;
-use rand::{
-    rngs::StdRng,
-    seq::{IteratorRandom, SliceRandom},
-    Rng, SeedableRng,
-};
+use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
 use rand_derive2::RandGen;
 use std::{
     collections::{HashMap, HashSet},
@@ -105,7 +101,7 @@ impl BruteForce {
             }
 
             if cur == dest {
-                break;
+                return max[&dest];
             }
             for next in &self.adj[cur] {
                 if !visited.contains(next) {
@@ -113,7 +109,7 @@ impl BruteForce {
                 }
             }
         }
-        max[&dest]
+        usize::MAX
     }
 
     pub fn findmin(&self, src: usize, dest: usize) -> usize {
@@ -135,7 +131,7 @@ impl BruteForce {
             }
 
             if cur == dest {
-                break;
+                return min[&dest];
             }
             for next in &self.adj[cur] {
                 if !visited.contains(next) {
@@ -143,7 +139,7 @@ impl BruteForce {
                 }
             }
         }
-        min[&dest]
+        usize::MAX
     }
 
     pub fn findsum(&self, src: usize, dest: usize) -> f64 {
@@ -165,7 +161,7 @@ impl BruteForce {
             }
 
             if cur == dest {
-                break;
+                return sum[&dest];
             }
             for next in &self.adj[cur] {
                 if !visited.contains(next) {
@@ -173,28 +169,7 @@ impl BruteForce {
                 }
             }
         }
-        sum[&dest]
-    }
-
-    pub fn random_edge(&self, rng: &mut StdRng) -> (usize, usize) {
-        let neighbors = (0..NUMBER_OF_NODES)
-            .filter(|&v| !self.adj[v].is_empty())
-            .collect::<Vec<_>>();
-        if neighbors.is_empty() {
-            return (usize::MAX, usize::MAX);
-        }
-        let v = *neighbors.choose(rng).unwrap();
-        let w = *self.adj[v].iter().choose(rng).unwrap();
-        (v, w)
-    }
-
-    pub fn random_connected_pair(&self, rng: &mut StdRng) -> (usize, usize) {
-        let v = rng.gen_range(0..NUMBER_OF_NODES);
-        let w = (0..NUMBER_OF_NODES)
-            .filter(|&w| self.connected(v, w))
-            .choose(rng)
-            .unwrap();
-        (v, w)
+        f64::MAX
     }
 }
 
@@ -229,20 +204,24 @@ pub fn connectivity() {
     let mut brute = BruteForce::new(weights.clone());
 
     // Time the operations:
-    let operations = ["link", "cut", "connected", "path"];
     let mut count_operations = [0; 4];
     let mut lctree_time = [Duration::new(0, 0); 4];
     let mut brute_time = [Duration::new(0, 0); 4];
 
     // Perform random operations: link, cut, or connected:
     for _ in 0..NUMBER_OF_OPERATIONS {
+        // Choose two random nodes to perform:
+        // - link: link the two nodes if they are not connected
+        // - cut: cut the edge between the two nodes if it exists
+        // - connected: check if the two nodes are connected
+        // - path: find the maximum weight in the path between the two nodes
+        let v = rng.gen_range(0..NUMBER_OF_NODES);
+        let w = rng.gen_range(0..NUMBER_OF_NODES);
+
+        // Choose a random operation:
         let operation: Operation = rng.gen();
         match operation {
             Operation::Link => {
-                // Choose two random nodes to link:
-                let v = rng.gen_range(0..NUMBER_OF_NODES);
-                let w = rng.gen_range(0..NUMBER_OF_NODES);
-
                 let now = std::time::Instant::now();
                 lctree.link(v, w);
                 lctree_time[0] += now.elapsed();
@@ -250,16 +229,8 @@ pub fn connectivity() {
                 let now = std::time::Instant::now();
                 brute.link(v, w);
                 brute_time[0] += now.elapsed();
-
-                count_operations[0] += 1;
             }
             Operation::Cut => {
-                // Choose a random existing edge to cut:
-                let (v, w) = brute.random_edge(&mut rng);
-                if v == w {
-                    continue; // no edges to cut
-                }
-
                 let now = std::time::Instant::now();
                 lctree.cut(v, w);
                 lctree_time[1] += now.elapsed();
@@ -267,14 +238,8 @@ pub fn connectivity() {
                 let now = std::time::Instant::now();
                 brute.cut(v, w);
                 brute_time[1] += now.elapsed();
-
-                count_operations[1] += 1;
             }
             Operation::Connected => {
-                // Choose two random nodes to check if they are connected:
-                let v = rng.gen_range(0..NUMBER_OF_NODES);
-                let w = rng.gen_range(0..NUMBER_OF_NODES);
-
                 let now = std::time::Instant::now();
                 let actual = lctree.connected(v, w);
                 lctree_time[2] += now.elapsed();
@@ -283,14 +248,9 @@ pub fn connectivity() {
                 let expected = brute.connected(v, w);
                 brute_time[2] += now.elapsed();
 
-                count_operations[2] += 1;
                 assert_eq!(actual, expected);
             }
             Operation::Path => {
-                // Choose two random nodes from the same tree to find the node
-                // with the maximum weight in the path between them:
-                let (v, w) = brute.random_connected_pair(&mut rng);
-
                 let now = std::time::Instant::now();
                 let actual = lctree.path(v, w).max_weight_idx;
                 lctree_time[3] += now.elapsed();
@@ -299,10 +259,10 @@ pub fn connectivity() {
                 let expected = brute.findmax(v, w);
                 brute_time[3] += now.elapsed();
 
-                count_operations[3] += 1;
                 assert_eq!(actual, expected);
             }
         }
+        count_operations[operation as usize] += 1;
     }
 
     println!("Number of nodes:       {}", NUMBER_OF_NODES);
@@ -312,6 +272,7 @@ pub fn connectivity() {
         "{:10}    {:10}    {:10}    {:10}",
         "Operation", "Count", "lctree", "brute"
     );
+    let operations = ["link", "cut", "connected", "path"];
     for (i, operation) in operations.iter().enumerate() {
         let lctree_op_time = format!("{:?}", lctree_time[i]);
         let brute_op_time = format!("{:?}", brute_time[i]);
