@@ -34,6 +34,10 @@ impl<T: Path> Node<T> {
         }
     }
 
+    pub fn flip_children(&mut self) {
+        std::mem::swap(&mut self.left, &mut self.right);
+    }
+
     #[allow(dead_code)]
     pub fn to_str(&self) -> String {
         let parent = match self.parent {
