@@ -6,7 +6,6 @@ use std::{
     time::Duration,
 };
 
-
 // These can be larger if you have time to spare (see tests/README.md)
 const NUMBER_OF_NODES: usize = 100;
 const NUMBER_OF_OPERATIONS: usize = 2000;
