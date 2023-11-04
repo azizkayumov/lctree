@@ -1,6 +1,6 @@
 pub struct Index {
     pub time_id: usize,
-    deleted_ids: Vec<usize>,
+    deleted_ids: Vec<usize>, // maybe use a set instead?
 }
 
 impl Index {
@@ -12,7 +12,7 @@ impl Index {
     }
 
     pub fn insert(&mut self) -> usize {
-        if self.deleted_ids.len() > 0 {
+        if !self.deleted_ids.is_empty() {
             return self.deleted_ids.pop().unwrap();
         }
         self.time_id += 1;
@@ -20,6 +20,7 @@ impl Index {
     }
 
     pub fn delete(&mut self, id: usize) {
+        assert!(id < self.time_id, "Invalid deletion");
         self.deleted_ids.push(id);
     }
 }
@@ -40,5 +41,17 @@ mod tests {
 
         // next insertion should be 1
         assert_eq!(index.insert(), 1);
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn test_invalid_deletion() {
+        let mut index = super::Index::new();
+        // make 3 insertions
+        assert_eq!(index.insert(), 0);
+        assert_eq!(index.insert(), 1);
+        assert_eq!(index.insert(), 2);
+
+        index.delete(4);
     }
 }
