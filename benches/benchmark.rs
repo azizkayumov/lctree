@@ -1,18 +1,54 @@
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use lctree::LinkCutTree;
 use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
 use rand_derive2::RandGen;
 use std::collections::{HashMap, HashSet};
 
-#[test]
-pub fn validation_check() {
-    // These can be larger if you have time to spare (see tests/README.md)
-    let num_nodes: usize = 100;
-    let num_operations: usize = 2000;
+fn benchmark(criterion: &mut Criterion) {
+    let num_nodes = [100, 200, 500, 1000, 5000];
+    let num_operations = [10_000, 20_000, 50_000, 1_000_000, 5_000_000];
+    let seeds: [u64; 5] = [0, 1, 2, 3, 4];
 
-    let seed = rand::thread_rng().gen();
-    println!("Seed: {}", seed); // print seed so we can reproduce the test (if it fails).
+    // The last two benchmarks are very slow, so we only run smaller samples:
+    for i in 0..3 {
+        let mut group = criterion.benchmark_group(format!("forest_{}", num_nodes[i]).as_str());
+        group.sample_size(10);
+
+        group.bench_function("lctree", |bencher| {
+            bencher.iter(|| {
+                lctree(
+                    black_box(num_nodes[i]),
+                    black_box(num_operations[i]),
+                    black_box(seeds[i]),
+                );
+            });
+        });
+
+        group.bench_function("bruteforce", |bencher| {
+            bencher.iter(|| {
+                bruteforce(
+                    black_box(num_nodes[i]),
+                    black_box(num_operations[i]),
+                    black_box(seeds[i]),
+                );
+            });
+        });
+    }
+}
+
+criterion_group!(benches, benchmark);
+criterion_main!(benches);
+
+#[derive(RandGen)]
+enum Operation {
+    Link,
+    Cut,
+    Connected,
+    Path,
+}
+
+fn lctree(num_nodes: usize, num_operations: usize, seed: u64) {
     let mut rng = StdRng::seed_from_u64(seed);
-
     // Generate distinct random weights:
     let mut weights = (0..num_nodes).map(|i| i as f64).collect::<Vec<_>>();
     weights.shuffle(&mut rng);
@@ -24,16 +60,7 @@ pub fn validation_check() {
         lctree.make_tree(weights[w]);
     }
 
-    // Initialize brute force data structure:
-    let mut brute = BruteForce::new(weights.clone());
-
-    // Perform random operations: link, cut, or connected:
     for _ in 0..num_operations {
-        // Choose two random nodes to perform:
-        // - link: link the two nodes if they are not connected
-        // - cut: cut the edge between the two nodes if it exists
-        // - connected: check if the two nodes are connected
-        // - path: find the maximum weight in the path between the two nodes
         let v = rng.gen_range(0..num_nodes);
         let w = rng.gen_range(0..num_nodes);
 
@@ -42,32 +69,51 @@ pub fn validation_check() {
         match operation {
             Operation::Link => {
                 lctree.link(v, w);
-                brute.link(v, w);
             }
             Operation::Cut => {
                 lctree.cut(v, w);
-                brute.cut(v, w);
             }
             Operation::Connected => {
-                let actual = lctree.connected(v, w);
-                let expected = brute.connected(v, w);
-                assert_eq!(actual, expected);
+                lctree.connected(v, w);
             }
             Operation::Path => {
-                let actual = lctree.path(v, w).max_weight_idx;
-                let expected = brute.findmax(v, w);
-                assert_eq!(actual, expected);
+                lctree.path(v, w);
             }
         }
     }
 }
 
-#[derive(RandGen)]
-enum Operation {
-    Link,
-    Cut,
-    Connected,
-    Path,
+fn bruteforce(num_nodes: usize, num_operations: usize, seed: u64) {
+    let mut rng = StdRng::seed_from_u64(seed);
+    // Generate distinct random weights:
+    let mut weights = (0..num_nodes).map(|i| i as f64).collect::<Vec<_>>();
+    weights.shuffle(&mut rng);
+
+    // Initialize link-cut tree, we start with a forest of single nodes
+    // (edges are not added yet):
+    let mut bruteforce = BruteForce::new(weights);
+
+    for _ in 0..num_operations {
+        let v = rng.gen_range(0..num_nodes);
+        let w = rng.gen_range(0..num_nodes);
+
+        // Choose a random operation:
+        let operation: Operation = rng.gen();
+        match operation {
+            Operation::Link => {
+                bruteforce.link(v, w);
+            }
+            Operation::Cut => {
+                bruteforce.cut(v, w);
+            }
+            Operation::Connected => {
+                bruteforce.connected(v, w);
+            }
+            Operation::Path => {
+                bruteforce.path(v, w);
+            }
+        }
+    }
 }
 
 struct BruteForce {
@@ -137,7 +183,7 @@ impl BruteForce {
         self.component_ids[v] == self.component_ids[w]
     }
 
-    pub fn findmax(&self, src: usize, dest: usize) -> usize {
+    pub fn path(&self, src: usize, dest: usize) -> usize {
         if self.component_ids[src] != self.component_ids[dest] {
             return usize::MAX;
         }
