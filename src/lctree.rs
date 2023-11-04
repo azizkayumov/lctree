@@ -1,4 +1,5 @@
 use crate::{
+    index::Index,
     node::{Node, Parent},
     path::{FindMax, Path},
     splay::{normalize, splay, update},
@@ -6,18 +7,38 @@ use crate::{
 
 pub struct LinkCutTree<T: Path> {
     forest: Vec<Node<T>>,
+    index: Index,
 }
 
 impl<T: Path> LinkCutTree<T> {
     #[must_use]
     pub fn new() -> Self {
-        Self { forest: Vec::new() }
+        Self {
+            forest: Vec::new(),
+            index: Index::new(),
+        }
     }
 
     pub fn make_tree(&mut self, weight: f64) -> usize {
-        let idx = self.forest.len();
+        let idx = self.index.insert();
+        if idx < self.forest.len() {
+            self.forest[idx] = Node::new(idx, weight);
+            return idx;
+        }
         self.forest.push(Node::new(idx, weight));
         idx
+    }
+
+    /// Delete a tree from the forest
+    /// # Panics
+    ///
+    /// Panics if the tree contains more than one node.
+    pub fn remove_tree(&mut self, idx: usize) {
+        assert!(
+            self.forest[idx].degree == 0,
+            "Invalid deletion: tree contains more than one node."
+        );
+        self.index.delete(idx);
     }
 
     /// Constructs a path from a node to the root of the tree.
@@ -68,6 +89,8 @@ impl<T: Path> LinkCutTree<T> {
         // v is the root of its represented tree, so no need to check if it has a left child
         self.forest[v].left = Some(w);
         self.forest[w].parent = Parent::Node(v);
+        self.forest[v].degree += 1;
+        self.forest[w].degree += 1;
     }
 
     /// Cuts the link between nodes v and w (if it exists)
@@ -79,11 +102,13 @@ impl<T: Path> LinkCutTree<T> {
         if let Some(left) = self.forest[w].left {
             if left != v || self.forest[v].right.is_some() {
                 // maybe this should be a panic?
-                eprintln!("Error: no link between {v} and {w}");
+                // eprintln!("Error: no link between {v} and {w}");
                 return;
             }
             self.forest[w].left = None;
             self.forest[left].parent = Parent::Root;
+            self.forest[v].degree -= 1;
+            self.forest[w].degree -= 1;
         }
     }
 
@@ -515,5 +540,28 @@ mod tests {
         assert_eq!(lctree.path(0, 9).sum, 23.);
         assert_eq!(lctree.path(4, 3).sum, 15.);
         assert_eq!(lctree.path(5, 7).sum, 9.);
+    }
+
+    #[test]
+    pub fn deletion() {
+        let mut lctree = super::LinkCutTree::default();
+        for i in 0..10 {
+            lctree.make_tree(i as f64);
+        }
+        // Check the forest size:
+        assert!(lctree.forest.len() == 10);
+
+        // We delete nodes 2, 4, 9:
+        lctree.remove_tree(2);
+        lctree.remove_tree(5);
+        lctree.remove_tree(9);
+
+        // Add 3 new nodes:
+        lctree.make_tree(10.0);
+        lctree.make_tree(11.0);
+        lctree.make_tree(12.0);
+
+        // Check that the space of deleted nodes are reused:
+        assert!(lctree.forest.len() == 10);
     }
 }

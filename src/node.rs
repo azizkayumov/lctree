@@ -16,6 +16,8 @@ pub struct Node<T: Path> {
     // for path aggregation:
     pub weight: f64,
     pub path: T,
+    // for deletion (the number of edges connected to this node):
+    pub degree: usize,
 }
 
 impl<T: Path> Node<T> {
@@ -28,6 +30,7 @@ impl<T: Path> Node<T> {
             flipped: false,
             weight,
             path: T::default(weight, idx),
+            degree: 0,
         }
     }
 
