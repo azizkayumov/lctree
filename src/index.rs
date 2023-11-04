@@ -1,5 +1,5 @@
 pub struct Index {
-    pub time_id: usize,
+    time_id: usize,
     deleted_ids: Vec<usize>, // maybe use a set instead?
 }
 
@@ -35,12 +35,16 @@ mod tests {
         assert_eq!(index.insert(), 0);
         assert_eq!(index.insert(), 1);
         assert_eq!(index.insert(), 2);
+        assert_eq!(index.time_id, 3);
 
         // delete 1
         index.delete(1);
+        assert_eq!(index.time_id, 3);
+        assert_eq!(index.deleted_ids, vec![1]);
 
         // next insertion should be 1
         assert_eq!(index.insert(), 1);
+        assert_eq!(index.time_id, 3);
     }
 
     #[test]
@@ -51,7 +55,6 @@ mod tests {
         assert_eq!(index.insert(), 0);
         assert_eq!(index.insert(), 1);
         assert_eq!(index.insert(), 2);
-
         index.delete(4);
     }
 }

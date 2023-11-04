@@ -1,32 +1,24 @@
 use crate::{
-    index::Index,
-    node::{Node, Parent},
     path::{FindMax, Path},
-    splay::{normalize, splay, update},
+    splay::Forest,
 };
 
-pub struct LinkCutTree<T: Path> {
-    forest: Vec<Node<T>>,
-    index: Index,
+pub struct LinkCutTree<P: Path> {
+    forest: Forest<P>,
 }
 
-impl<T: Path> LinkCutTree<T> {
+impl<P: Path> LinkCutTree<P> {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            forest: Vec::new(),
-            index: Index::new(),
+            forest: Forest::new(),
         }
     }
 
+    /// Creates a new tree with a single node with the given weight.
+    /// Returns the id of the node.
     pub fn make_tree(&mut self, weight: f64) -> usize {
-        let idx = self.index.insert();
-        if idx < self.forest.len() {
-            self.forest[idx] = Node::new(idx, weight);
-            return idx;
-        }
-        self.forest.push(Node::new(idx, weight));
-        idx
+        self.forest.create_node(weight)
     }
 
     /// Delete a tree from the forest
@@ -34,43 +26,27 @@ impl<T: Path> LinkCutTree<T> {
     ///
     /// Panics if the tree contains more than one node.
     pub fn remove_tree(&mut self, idx: usize) {
-        assert!(
-            self.forest[idx].degree == 0,
-            "Invalid deletion: tree contains more than one node."
-        );
-        self.index.delete(idx);
+        self.forest.delete_node(idx);
     }
 
     /// Constructs a path from a node to the root of the tree.
     fn access(&mut self, v: usize) {
-        splay(&mut self.forest, v);
-        if let Some(right_idx) = self.forest[v].right {
-            self.forest[v].right = None;
-            self.forest[right_idx].parent = Parent::Path(v);
-            update(&mut self.forest, v);
-        }
+        self.forest.splay(v);
+        self.forest.remove_preferred_child(v);
 
-        while let Parent::Path(path_idx) = self.forest[v].parent {
-            splay(&mut self.forest, path_idx);
-            // detach the right child of the path parent
-            if let Some(right_idx) = self.forest[path_idx].right {
-                self.forest[right_idx].parent = Parent::Path(path_idx);
-                self.forest[path_idx].right = None;
-            }
+        while let Some(path_idx) = self.forest.path_parent_of(v) {
+            self.forest.splay(path_idx);
+            self.forest.remove_preferred_child(path_idx);
 
-            // attach the node as the path parent's right child
-            self.forest[path_idx].right = Some(v);
-            self.forest[v].parent = Parent::Node(path_idx);
-
-            splay(&mut self.forest, v); // just a rotation
+            self.forest.set_right(path_idx, v);
+            self.forest.splay(v); // just a rotation
         }
     }
 
     /// Makes v the root of its represented tree by flipping the path from v to the root.
     fn reroot(&mut self, v: usize) {
         self.access(v);
-        self.forest[v].flipped ^= true;
-        normalize(&mut self.forest, v);
+        self.forest.flip(v);
     }
 
     /// Checks if v and w are connected in the forest.
@@ -78,7 +54,7 @@ impl<T: Path> LinkCutTree<T> {
         self.reroot(v); // v is now the root of the tree
         self.access(w);
         // if access(w) messed with the root of the tree, then v and w are connected:
-        !matches!(self.forest[v].parent, Parent::Root) || v == w
+        self.forest.parent_of(v).is_some() || v == w
     }
 
     /// Creates a link between two nodes in the forest (where w is the parent of v).
@@ -87,10 +63,7 @@ impl<T: Path> LinkCutTree<T> {
             return;
         }
         // v is the root of its represented tree, so no need to check if it has a left child
-        self.forest[v].left = Some(w);
-        self.forest[w].parent = Parent::Node(v);
-        self.forest[v].degree += 1;
-        self.forest[w].degree += 1;
+        self.forest.set_left(v, w);
     }
 
     /// Cuts the link between nodes v and w (if it exists)
@@ -99,35 +72,32 @@ impl<T: Path> LinkCutTree<T> {
             return;
         }
         // detach w from its parent (which is v)
-        if let Some(left) = self.forest[w].left {
-            if left != v || self.forest[v].right.is_some() {
+        if let Some(left) = self.forest.left_of(w) {
+            if left != v || self.forest.right_of(v).is_some() {
                 // maybe this should be a panic?
                 // eprintln!("Error: no link between {v} and {w}");
                 return;
             }
-            self.forest[w].left = None;
-            self.forest[left].parent = Parent::Root;
-            self.forest[v].degree -= 1;
-            self.forest[w].degree -= 1;
+            self.forest.cut_left(w);
         }
     }
 
     /// Performs path aggregation on a path between v and w (if they are connected)
-    pub fn path(&mut self, v: usize, w: usize) -> T {
+    pub fn path(&mut self, v: usize, w: usize) -> P {
         if !self.connected(v, w) {
-            return T::default(f64::INFINITY, usize::MAX);
+            return P::default(f64::INFINITY, usize::MAX);
         }
-        self.forest[w].path
+        self.forest.aggregated_path_of(w)
     }
 
     /// Finds the root of the tree that v is in.
     pub fn findroot(&mut self, v: usize) -> usize {
         self.access(v);
         let mut root = v;
-        while let Some(left) = self.forest[root].left {
+        while let Some(left) = self.forest.left_of(root) {
             root = left;
         }
-        splay(&mut self.forest, root); // fast access to the root next time
+        self.forest.splay(root); // fast access to the root next time
         root
     }
 }
@@ -140,123 +110,10 @@ impl Default for LinkCutTree<FindMax> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{node::Parent, FindMin, FindSum, LinkCutTree};
+    use crate::{FindMin, FindSum, LinkCutTree};
 
     #[test]
-    pub fn access() {
-        let mut tree = super::LinkCutTree::default();
-        for i in 0..4 {
-            tree.make_tree(i as f64);
-        }
-        // '1' has a path pointer to '0', '1' has a right child '2'.
-        // after access(2), '2' should be the root of the tree:
-        //    0             0             0               2
-        //    |             |              \             /
-        //    1      =>     2      =>       2     =>    0
-        //     \           /               /             \
-        //      2         1               1               1
-        tree.forest[1].parent = Parent::Path(0);
-        tree.forest[1].right = Some(2);
-        tree.forest[2].parent = Parent::Node(1);
-        tree.access(2);
-        assert!(matches!(tree.forest[2].parent, Parent::Root));
-        assert_eq!(tree.forest[2].right, None);
-        assert_eq!(tree.forest[2].left, Some(0));
-        assert!(matches!(tree.forest[0].parent, Parent::Node(2)));
-        assert_eq!(tree.forest[0].left, None);
-        assert_eq!(tree.forest[0].right, Some(1));
-        assert!(matches!(tree.forest[1].parent, Parent::Node(0)));
-        assert_eq!(tree.forest[1].left, None);
-        assert_eq!(tree.forest[1].right, None);
-    }
-
-    #[test]
-    pub fn link_already_connected() {
-        // '2' has a right child '3':
-        // link(0, 3) should add no link, and result in (| denotes a path pointer):
-        //   0                   3
-        //  / \                 /
-        // 1   2     =>        0
-        //      \              |\
-        //       3             1 2
-        //
-        let mut tree = super::LinkCutTree::default();
-        for i in 0..4 {
-            tree.make_tree(i as f64);
-        }
-        tree.forest[0].left = Some(1);
-        tree.forest[0].right = Some(2);
-        tree.forest[1].parent = Parent::Node(0);
-        tree.forest[2].parent = Parent::Node(0);
-        tree.forest[2].right = Some(3);
-        tree.forest[3].parent = Parent::Node(2);
-        tree.link(0, 3);
-        assert!(matches!(tree.forest[3].parent, Parent::Root));
-        assert_eq!(tree.forest[3].left, Some(0));
-        assert_eq!(tree.forest[3].right, None);
-        assert!(matches!(tree.forest[0].parent, Parent::Node(3)));
-        assert_eq!(tree.forest[0].left, None);
-        assert!(matches!(tree.forest[1].parent, Parent::Path(0)));
-        assert_eq!(tree.forest[0].right, Some(2));
-        assert!(matches!(tree.forest[2].parent, Parent::Node(0)));
-    }
-
-    #[test]
-    pub fn link() {
-        // Given two trees:
-        //   0               3
-        //  / \
-        // 1   2
-        // link(3, 1) should result in a single tree (| denotes a path pointer):
-        //                          3
-        //                         /
-        //   1      3             1
-        //   |                    |
-        //   0            =>      0
-        //    \                    \
-        //     2                    2
-        let mut tree = super::LinkCutTree::default();
-        for i in 0..4 {
-            tree.make_tree(i as f64);
-        }
-        tree.forest[0].left = Some(1);
-        tree.forest[0].right = Some(2);
-        tree.forest[1].parent = Parent::Node(0);
-        tree.forest[2].parent = Parent::Node(0);
-        tree.link(3, 1);
-        assert!(matches!(tree.forest[3].parent, Parent::Root));
-        assert_eq!(tree.forest[3].left, Some(1));
-        assert!(matches!(tree.forest[1].parent, Parent::Node(3)));
-        assert!(matches!(tree.forest[0].parent, Parent::Path(1)));
-        assert_eq!(tree.forest[0].left, None);
-        assert_eq!(tree.forest[0].right, Some(2));
-    }
-
-    #[test]
-    pub fn connected() {
-        // check two splay trees that are connected by a path pointer
-        //     0
-        //    / \
-        //   1   2
-        //       |
-        //       3
-        let mut tree = super::LinkCutTree::default();
-        for i in 0..4 {
-            tree.make_tree(i as f64);
-        }
-        tree.forest[0].left = Some(1);
-        tree.forest[0].right = Some(2);
-        tree.forest[1].parent = Parent::Node(0);
-        tree.forest[2].parent = Parent::Node(0);
-        tree.forest[3].parent = Parent::Path(2);
-
-        assert!(tree.connected(0, 3));
-        assert!(tree.connected(1, 3));
-        assert!(tree.connected(2, 3));
-    }
-
-    #[test]
-    pub fn cut() {
+    pub fn link_cut() {
         // We form a link-cut tree from the following rooted tree:
         //     0
         //    / \
@@ -540,28 +397,5 @@ mod tests {
         assert_eq!(lctree.path(0, 9).sum, 23.);
         assert_eq!(lctree.path(4, 3).sum, 15.);
         assert_eq!(lctree.path(5, 7).sum, 9.);
-    }
-
-    #[test]
-    pub fn deletion() {
-        let mut lctree = super::LinkCutTree::default();
-        for i in 0..10 {
-            lctree.make_tree(i as f64);
-        }
-        // Check the forest size:
-        assert!(lctree.forest.len() == 10);
-
-        // We delete nodes 2, 4, 9:
-        lctree.remove_tree(2);
-        lctree.remove_tree(5);
-        lctree.remove_tree(9);
-
-        // Add 3 new nodes:
-        lctree.make_tree(10.0);
-        lctree.make_tree(11.0);
-        lctree.make_tree(12.0);
-
-        // Check that the space of deleted nodes are reused:
-        assert!(lctree.forest.len() == 10);
     }
 }

@@ -9,7 +9,8 @@ fn benchmark(criterion: &mut Criterion) {
     let num_operations = [10_000, 20_000, 50_000, 1_000_000, 5_000_000];
     let seeds: [u64; 5] = [0, 1, 2, 3, 4];
 
-    // The last two benchmarks are very slow, so we only run smaller samples:
+    // The last two benchmarks are very slow with the brute force,
+    // so we only run smaller samples:
     for i in 0..3 {
         let mut group = criterion.benchmark_group(format!("forest_{}", num_nodes[i]).as_str());
         group.sample_size(10);
