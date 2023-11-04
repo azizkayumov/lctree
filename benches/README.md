@@ -1,7 +1,7 @@
 ### Benchmark
 The overall running time for performing a number of random operations (`link(v, w)`, `cut(v, w)`, `connected(v, w)` or `findmax(v, w)`) on forests of varying sizes.
 
-| # Nodes     | # Operations    | Random seed           | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/tests/test_random.rs)  | 
+| # Nodes     | # Operations    | Random seed           | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/benches/benchmark.rs)  | 
 | :---        | :---            | :---                  | :---          | :---            |
 | 100         | 10K             | 0                     | 4.8973 ms     | 18.992 ms       |
 | 200         | 20K             | 1                     | 11.175 ms     | 74.780 ms       |
@@ -14,8 +14,8 @@ The following table includes worst-case time complexity analysis of each operati
 | Operation   |  link(v, w)  |  cut(v, w) |  connected(v, w)  |  path(v, w)  |
 | :---        | :---         | :---       |  :---             |  :---        |
 | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)                     | `O(logn)`                   | `O(logn)`                    |  `O(logn)`  |  `O(logn)`              |
-| [brute-force](https://github.com/azizkayumov/lctree/blob/main/tests/test_random.rs)         | `O(min{size(v), size(w)})`  | `O(min{size(v), size(w)})`   |  `O(1)`     |  `O(size(v) + size(w))` |
+| [brute-force](https://github.com/azizkayumov/lctree/blob/main/benches/benchmark.rs)         | `O(min{size(v), size(w)})`  | `O(min{size(v), size(w)})`   |  `O(1)`     |  `O(size(v) + size(w))` |
 
 \* Benchmarks were run on iMac 24" M1 2021 16Gb.
 
-\* To reproduce these results, please refer to the `\benches` folder or run `cargo bench`.
+\* To reproduce these results, please refer to the `\benches` folder or simply run `cargo bench`.
