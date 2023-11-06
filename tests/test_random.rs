@@ -4,7 +4,45 @@ use rand_derive2::RandGen;
 use std::collections::{HashMap, HashSet};
 
 #[test]
-pub fn intro() {
+pub fn basic_usage() {
+    // We form a link-cut tree from the following rooted tree:
+    //     a
+    //    / \
+    //   b   e
+    //  / \   \
+    // c   d   f
+    let mut lctree = lctree::LinkCutTree::default();
+    let a = lctree.make_tree(0.0);
+    let b = lctree.make_tree(1.0);
+    let c = lctree.make_tree(2.0);
+    let d = lctree.make_tree(3.0);
+    let e = lctree.make_tree(4.0);
+    let f = lctree.make_tree(5.0);
+    lctree.link(b, a);
+    lctree.link(c, b);
+    lctree.link(d, b);
+    lctree.link(e, a);
+    lctree.link(f, e);
+
+    // Checking connectivity:
+    assert!(lctree.connected(c, f)); // connected
+
+    // We cut node e from its parent a:
+    lctree.cut(e, a);
+
+    // The forest should now look like this:
+    //     a
+    //    /
+    //   b     e
+    //  / \     \
+    // c   d     f
+
+    // We check connectivity again:
+    assert!(!lctree.connected(c, f)); // not connected anymore
+}
+
+#[test]
+pub fn path_aggregation() {
     // We form a link-cut tree from the following rooted tree
     // (the numbers in parentheses are the weights of the nodes):
     //           a(9)
@@ -36,7 +74,7 @@ pub fn intro() {
 }
 
 #[test]
-pub fn validation_check() {
+pub fn validation() {
     // These can be larger if you have time to spare (see tests/README.md)
     let num_nodes: usize = 100;
     let num_operations: usize = 2000;
