@@ -5,44 +5,38 @@ pub trait Path: Copy + Clone {
 
 #[derive(Copy, Clone)]
 pub struct FindMax {
-    pub max_weight_idx: usize,
-    pub max_weight: f64,
+    pub idx: usize,
+    pub weight: f64,
 }
 
 impl Path for FindMax {
     fn default(weight: f64, index: usize) -> Self {
-        FindMax {
-            max_weight_idx: index,
-            max_weight: weight,
-        }
+        FindMax { idx: index, weight }
     }
 
     fn aggregate(&mut self, other: Self) {
-        if other.max_weight > self.max_weight {
-            self.max_weight = other.max_weight;
-            self.max_weight_idx = other.max_weight_idx;
+        if other.weight > self.weight {
+            self.weight = other.weight;
+            self.idx = other.idx;
         }
     }
 }
 
 #[derive(Copy, Clone)]
 pub struct FindMin {
-    pub min_weight_idx: usize,
-    pub min_weight: f64,
+    pub idx: usize,
+    pub weight: f64,
 }
 
 impl Path for FindMin {
     fn default(weight: f64, index: usize) -> Self {
-        FindMin {
-            min_weight_idx: index,
-            min_weight: weight,
-        }
+        FindMin { idx: index, weight }
     }
 
     fn aggregate(&mut self, other: Self) {
-        if other.min_weight < self.min_weight {
-            self.min_weight = other.min_weight;
-            self.min_weight_idx = other.min_weight_idx;
+        if other.weight < self.weight {
+            self.weight = other.weight;
+            self.idx = other.idx;
         }
     }
 }

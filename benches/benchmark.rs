@@ -5,13 +5,13 @@ use rand_derive2::RandGen;
 use std::collections::{HashMap, HashSet};
 
 fn benchmark(criterion: &mut Criterion) {
-    let num_nodes = [100, 200, 500, 1000, 5000];
-    let num_operations = [10_000, 20_000, 50_000, 100_000, 500_000];
-    let seeds: [u64; 5] = [0, 1, 2, 3, 4];
+    let num_nodes = [100, 200, 500, 1000, 5000, 10_000];
+    let num_operations = [10_000, 20_000, 50_000, 100_000, 500_000, 1_000_000];
+    let seeds: [u64; 6] = [0, 1, 2, 3, 4, 6];
 
     // The last two benchmarks are very slow with the brute force,
     // so we only run smaller samples:
-    for i in 0..5 {
+    for i in 0..3 {
         let mut group = criterion.benchmark_group(format!("forest_{}", num_nodes[i]).as_str());
         group.sample_size(10);
 

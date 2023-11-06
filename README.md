@@ -129,13 +129,14 @@ fn main() {
 ## Benchmark
 The overall running time for performing a number of random operations (`link(v, w)`, `cut(v, w)`, `connected(v, w)` or `findmax(v, w)`) on forests of varying sizes (check benchmark details [here](https://github.com/azizkayumov/lctree/blob/main/benches/README.md)).
 
-| # Nodes     | # Operations    | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/benches/benchmark.rs)  | 
+| # Nodes     | # Operations    | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/benches/benchmark.rs)  |
 | :---        | :---            | :---          | :---            |
 | 100         | 10K             | 4.8161 ms     | 18.013 ms       |
 | 200         | 20K             | 11.091 ms     | 69.855 ms       |
 | 500         | 50K             | 31.623 ms     | 429.53 ms       |
 | 1000        | 100K            | 68.649 ms     | 1.8746 s        |
 | 5000        | 500K            | 445.83 ms     | 46.854 s        |
+| 10K         | 1M              | 964.64 ms     | 183.24 s        |
 
 ## Credits
 This crate applies the core concepts and ideas presented in the following sources:

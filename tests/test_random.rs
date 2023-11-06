@@ -54,7 +54,7 @@ pub fn validation_check() {
                 assert_eq!(actual, expected);
             }
             Operation::Path => {
-                let actual = lctree.path(v, w).max_weight_idx;
+                let actual = lctree.path(v, w).idx;
                 let expected = brute.findmax(v, w);
                 assert_eq!(actual, expected);
             }
