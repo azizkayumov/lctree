@@ -131,11 +131,11 @@ The overall running time for performing a number of random operations (`link(v, 
 
 | # Nodes     | # Operations    | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/benches/benchmark.rs)  | 
 | :---        | :---            | :---          | :---            |
-| 100         | 10K             | 4.8973 ms     | 18.992 ms       |
-| 200         | 20K             | 11.175 ms     | 74.780 ms       |
-| 500         | 50K             | 31.590 ms     | 471.71 ms       |
-| 1000        | 1M              | 699.00 ms     | 19.608 s        |
-| 5000        | 5M              | 4.5047 s      | 500.04 s        |
+| 100         | 10K             | 4.8161 ms     | 18.013 ms       |
+| 200         | 20K             | 11.091 ms     | 69.855 ms       |
+| 500         | 50K             | 31.623 ms     | 429.53 ms       |
+| 1000        | 100K            | 68.649 ms     | 1.8746 s        |
+| 5000        | 500K            | 445.83 ms     | 46.854 s        |
 
 ## Credits
 This crate applies the core concepts and ideas presented in the following sources:

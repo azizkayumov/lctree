@@ -3,11 +3,11 @@ The overall running time for performing a number of random operations (`link(v, 
 
 | # Nodes     | # Operations    | Random seed           | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/benches/benchmark.rs)  | 
 | :---        | :---            | :---                  | :---          | :---            |
-| 100         | 10K             | 0                     | 4.8973 ms     | 18.992 ms       |
-| 200         | 20K             | 1                     | 11.175 ms     | 74.780 ms       |
-| 500         | 50K             | 2                     | 31.590 ms     | 471.71 ms       |
-| 1000        | 1M              | 3                     | 699.00 ms     | 19.608 s        |
-| 5000        | 5M              | 4                     | 4.5047 s      | 500.04 s        |
+| 100         | 10K             | 0                     | 4.8161 ms     | 18.013 ms       |
+| 200         | 20K             | 1                     | 11.091 ms     | 69.855 ms       |
+| 500         | 50K             | 2                     | 31.623 ms     | 429.53 ms       |
+| 1000        | 100K            | 3                     | 68.649 ms     | 1.8746 s        |
+| 5000        | 500K            | 4                     | 445.83 ms     | 46.854 s        |
 
 The following table includes worst-case time complexity analysis of each operation for the brute-force solution and Link-cut-trees:
 
