@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 fn benchmark(criterion: &mut Criterion) {
     let num_nodes = [100, 200, 500, 1000, 5000, 10_000];
     let num_operations = [10_000, 20_000, 50_000, 100_000, 500_000, 1_000_000];
-    let seeds: [u64; 6] = [0, 1, 2, 3, 4, 6];
+    let seeds: [u64; 6] = [0, 1, 2, 3, 4, 5];
 
     // The last two benchmarks are very slow with the brute force,
     // so we only run smaller samples:
