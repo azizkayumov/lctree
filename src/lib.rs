@@ -14,7 +14,7 @@
 /// - `findmax(v, w)`: returns the maximum value on a path between nodes `v` and `w`.
 /// - `findmin(v, w)`: returns the minimum value on a path between nodes `v` and `w`.
 /// - `findsum(v, w)`: returns the sum of values on a path between nodes `v` and `w`.
-/// A custom aggregation function can also be implemented by implementing the [Path] trait.
+/// A custom aggregation function can also be implemented by using the [Path] trait.
 ///
 /// # Tree creation and removal
 /// Tree nodes are created and removed using the following operations:
@@ -22,7 +22,7 @@
 /// - `remove_tree(v)`: removes the tree containing a single node `v` from the forest.
 /// - `extend_forest(weights)`: useful for creating a forest of trees from a vector of weights.
 ///
-/// For further documentation, see the [LinkCutTree] struct.
+/// For further documentation, see the [`LinkCutTree`] struct.
 mod index;
 mod lctree;
 mod node;
