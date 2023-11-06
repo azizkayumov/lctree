@@ -8,6 +8,7 @@ The overall running time for performing a number of random operations (`link(v, 
 | 500         | 50K             | 2                     | 31.623 ms     | 429.53 ms       |
 | 1000        | 100K            | 3                     | 68.649 ms     | 1.8746 s        |
 | 5000        | 500K            | 4                     | 445.83 ms     | 46.854 s        |
+| 10K         | 1M              | 5                     | 964.64 ms     | 183.24 s        |
 
 The following table includes worst-case time complexity analysis of each operation for the brute-force solution and Link-cut-trees:
 

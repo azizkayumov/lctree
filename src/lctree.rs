@@ -8,6 +8,7 @@ pub struct LinkCutTree<P: Path> {
 }
 
 impl<P: Path> LinkCutTree<P> {
+    /// Creates a new empty link-cut tree.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -15,13 +16,52 @@ impl<P: Path> LinkCutTree<P> {
         }
     }
 
-    /// Creates a new tree with a single node with the given weight.
-    /// Returns the id of the node.
+    /// Creates a new tree with a single node with the given weight and returns its id.
+    /// If possible, reuses the space of a deleted node and returns its id.
+    ///
+    /// # Examples
+    /// ```
+    /// use lctree::LinkCutTree;
+    ///
+    /// let mut lctree = LinkCutTree::default();
+    /// let alice = lctree.make_tree(0.0);
+    /// let bob = lctree.make_tree(1.0);
+    /// let clay = lctree.make_tree(2.0);
+    /// assert_eq!([alice, bob, clay], [0, 1, 2]);
+    ///
+    /// // Remove bob's tree from the forest
+    /// lctree.remove_tree(bob);
+    ///
+    /// // Reuse the space of bob's tree (which was removed) to create a new tree:
+    /// let david = lctree.make_tree(4.0);
+    /// assert_eq!(david, bob);
+    /// ```
     pub fn make_tree(&mut self, weight: f64) -> usize {
         self.forest.create_node(weight)
     }
 
-    /// Delete a tree from the forest
+    /// Extends the forest with n new single-noded trees with the given weights.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lctree::LinkCutTree;
+    ///
+    /// let weights = vec![1.0, 2.0, 3.0];
+    /// let mut lctree = LinkCutTree::default();
+    /// let trees_ids = lctree.extend_forest(&weights);
+    /// assert_eq!(trees_ids, vec![0, 1, 2]);
+    /// ```
+    #[must_use]
+    pub fn extend_forest(&mut self, weights: &[f64]) -> Vec<usize> {
+        weights
+            .iter()
+            .map(|&weight| self.make_tree(weight))
+            .collect()
+    }
+
+    /// Delete a tree with a single node with the given id.
+    ///
     /// # Panics
     ///
     /// Panics if the tree contains more than one node.
@@ -49,7 +89,20 @@ impl<P: Path> LinkCutTree<P> {
         self.forest.flip(v);
     }
 
-    /// Checks if v and w are connected in the forest.
+    /// Checks if two nodes are connected (i.e. in the same tree).
+    ///
+    /// # Examples
+    /// ```
+    /// use lctree::LinkCutTree;
+    ///
+    /// let mut lctree = LinkCutTree::default();
+    /// let alice = lctree.make_tree(0.0);
+    /// let bob = lctree.make_tree(1.0);
+    /// assert!(!lctree.connected(alice, bob)); // not connected yet
+    ///
+    /// lctree.link(alice, bob);
+    /// assert!(lctree.connected(alice, bob)); // now connected
+    /// ```
     pub fn connected(&mut self, v: usize, w: usize) -> bool {
         self.reroot(v); // v is now the root of the tree
         self.access(w);
@@ -57,16 +110,46 @@ impl<P: Path> LinkCutTree<P> {
         self.forest.parent_of(v).is_some() || v == w
     }
 
-    /// Creates a link between two nodes in the forest (where w is the parent of v).
+    /// Merges two trees into a single tree.
+    ///
+    /// # Examples
+    /// ```
+    /// use lctree::LinkCutTree;
+    ///
+    /// let mut lctree = LinkCutTree::default();
+    /// let alice = lctree.make_tree(0.0);
+    /// let bob = lctree.make_tree(1.0);
+    /// let clay = lctree.make_tree(2.0);
+    ///
+    /// lctree.link(alice, bob);
+    /// lctree.link(bob, clay);
+    /// assert!(lctree.connected(alice, clay));
+    /// ```
     pub fn link(&mut self, v: usize, w: usize) {
         if self.connected(v, w) {
             return;
         }
-        // v is the root of its represented tree, so no need to check if it has a left child
+        // v is the root of its represented tree:
         self.forest.set_left(v, w);
     }
 
-    /// Cuts the link between nodes v and w (if it exists)
+    /// Cuts the link between two nodes (if it exists)
+    ///
+    /// # Examples
+    /// ```
+    /// use lctree::LinkCutTree;
+    ///
+    /// let mut lctree = LinkCutTree::default();
+    /// let alice = lctree.make_tree(0.0);
+    /// let bob = lctree.make_tree(1.0);
+    /// assert!(!lctree.connected(alice, bob)); // not connected yet
+    ///
+    /// lctree.link(alice, bob);
+    /// assert!(lctree.connected(alice, bob)); // now connected
+    ///
+    /// lctree.cut(alice, bob);
+    /// assert!(!lctree.connected(alice, bob)); // not connected again
+    /// ```
     pub fn cut(&mut self, v: usize, w: usize) {
         if !self.connected(v, w) {
             return;
@@ -82,7 +165,28 @@ impl<P: Path> LinkCutTree<P> {
         }
     }
 
-    /// Performs path aggregation on a path between v and w (if they are connected)
+    /// Performs path aggregation on a path between two nodes (if they are connected)
+    ///
+    /// # Examples
+    /// ```
+    /// use lctree::{LinkCutTree, FindMax};
+    ///
+    /// let mut lctree: LinkCutTree<FindMax> = LinkCutTree::new();
+    /// let alice = lctree.make_tree(0.0);
+    /// let bob = lctree.make_tree(10.0);
+    /// let clay = lctree.make_tree(1.0);
+    /// let dave = lctree.make_tree(2.0);
+    ///
+    /// // Form a path from Alice to Dave:
+    /// lctree.link(alice, bob);
+    /// lctree.link(bob, clay);
+    /// lctree.link(clay, dave);
+    ///
+    /// // Find the richest guy in the path from Alice to Dave:
+    /// let richest_guy = lctree.path(alice, dave);
+    /// assert_eq!(richest_guy.idx, bob);
+    /// assert_eq!(richest_guy.weight, 10.0);
+    /// ```
     pub fn path(&mut self, v: usize, w: usize) -> P {
         if !self.connected(v, w) {
             return P::default(f64::INFINITY, usize::MAX);
@@ -90,7 +194,7 @@ impl<P: Path> LinkCutTree<P> {
         self.forest.aggregated_path_of(w)
     }
 
-    /// Finds the root of the tree that v is in.
+    /// Finds the root of the tree that the query node is in.
     pub fn findroot(&mut self, v: usize) -> usize {
         self.access(v);
         let mut root = v;
@@ -314,13 +418,13 @@ mod tests {
         lctree.link(9, 7);
 
         // We check the node index with max weight in the path from each node to the root:
-        assert_eq!(lctree.path(4, 5).max_weight_idx, 0);
-        assert_eq!(lctree.path(3, 6).max_weight_idx, 0);
-        assert_eq!(lctree.path(2, 7).max_weight_idx, 0);
-        assert_eq!(lctree.path(1, 8).max_weight_idx, 0);
-        assert_eq!(lctree.path(0, 9).max_weight_idx, 0);
-        assert_eq!(lctree.path(4, 3).max_weight_idx, 2);
-        assert_eq!(lctree.path(5, 7).max_weight_idx, 6);
+        assert_eq!(lctree.path(4, 5).idx, 0);
+        assert_eq!(lctree.path(3, 6).idx, 0);
+        assert_eq!(lctree.path(2, 7).idx, 0);
+        assert_eq!(lctree.path(1, 8).idx, 0);
+        assert_eq!(lctree.path(0, 9).idx, 0);
+        assert_eq!(lctree.path(4, 3).idx, 2);
+        assert_eq!(lctree.path(5, 7).idx, 6);
     }
 
     #[test]
@@ -352,13 +456,13 @@ mod tests {
         lctree.link(9, 7);
 
         // We check the node index with max weight in the path from each node to the root:
-        assert_eq!(lctree.path(4, 5).min_weight_idx, 1);
-        assert_eq!(lctree.path(3, 6).min_weight_idx, 3);
-        assert_eq!(lctree.path(2, 7).min_weight_idx, 1);
-        assert_eq!(lctree.path(1, 8).min_weight_idx, 1);
-        assert_eq!(lctree.path(0, 9).min_weight_idx, 5);
-        assert_eq!(lctree.path(4, 3).min_weight_idx, 3);
-        assert_eq!(lctree.path(5, 7).min_weight_idx, 5);
+        assert_eq!(lctree.path(4, 5).idx, 1);
+        assert_eq!(lctree.path(3, 6).idx, 3);
+        assert_eq!(lctree.path(2, 7).idx, 1);
+        assert_eq!(lctree.path(1, 8).idx, 1);
+        assert_eq!(lctree.path(0, 9).idx, 5);
+        assert_eq!(lctree.path(4, 3).idx, 3);
+        assert_eq!(lctree.path(5, 7).idx, 5);
     }
 
     #[test]
