@@ -15,41 +15,39 @@ use lctree::LinkCutTree;
 
 fn main() {
     // We form a link-cut tree from the following rooted tree:
-    //     0
+    //     a
     //    / \
-    //   1   4
+    //   b   e
     //  / \   \
-    // 2   3   5
-    //        /
-    //       6
+    // c   d   f
     let mut lctree = lctree::LinkCutTree::default();
-    for i in 0..7 {
-        lctree.make_tree(i as f64);
-    }
-    lctree.link(1, 0);
-    lctree.link(2, 1);
-    lctree.link(3, 1);
-    lctree.link(4, 0);
-    lctree.link(5, 4);
-    lctree.link(6, 5);
+    let a = lctree.make_tree(0.0);
+    let b = lctree.make_tree(1.0);
+    let c = lctree.make_tree(2.0);
+    let d = lctree.make_tree(3.0);
+    let e = lctree.make_tree(4.0);
+    let f = lctree.make_tree(5.0);
+    lctree.link(b, a);
+    lctree.link(c, b);
+    lctree.link(d, b);
+    lctree.link(e, a);
+    lctree.link(f, e);
 
     // Checking connectivity:
-    assert!(lctree.connected(2, 6)); // connected
+    assert!(lctree.connected(c, f)); // connected
 
-    // We cut node 4 from its parent 0:
-    lctree.cut(4, 0);
+    // We cut node e from its parent a:
+    lctree.cut(e, a);
 
     // The forest should now look like this:
-    //     0
-    //    /   
-    //   1     4
+    //     a
+    //    / 
+    //   b     e
     //  / \     \
-    // 2   3     5
-    //          /
-    //         6
+    // c   d     f
 
     // We check connectivity again:
-    assert!(!lctree.connected(2, 6)); // not connected anymore
+    assert!(!lctree.connected(c, f)); // not connected anymore
 }
 ```
 Advanced usage include operations on paths:
@@ -64,31 +62,32 @@ use lctree::{LinkCutTree, FindMax, FindMin, FindSum};
 fn main() {
     // We form a link-cut tree from the following rooted tree
     // (the numbers in parentheses are the weights of the nodes):
-    //           0(9)
+    //           a(9)
     //           /  \
-    //         1(1)  4(2)
+    //         b(1)  e(2)
     //        /   \    \
-    //      2(8)  3(0)  5(4)
-    //                  /
-    //                6(3)
+    //      c(8)  d(0)  f(4)
 
     // Replace FindMax with FindMin or FindSum, depending on your usage:
     let mut lctree: LinkCutTree<FindMax> = lctree::LinkCutTree::new();
-    let weights = [9.0, 1.0, 8.0, 0.0, 2.0, 4.0, 3.0];
-    for i in 0..weights.len() {
-        lctree.make_tree(weights[i]);
-    }
-    lctree.link(1, 0);
-    lctree.link(2, 1);
-    lctree.link(3, 1);
-    lctree.link(4, 0);
-    lctree.link(5, 4);
-    lctree.link(6, 5);
+    let a = lctree.make_tree(9.);
+    let b = lctree.make_tree(1.);
+    let c = lctree.make_tree(8.);
+    let d = lctree.make_tree(0.);
+    let e = lctree.make_tree(2.);
+    let f = lctree.make_tree(4.);
 
-    // We find the node with max weight on the path between 2 to 6,
-    // where 0 has the maximum weight of 9.0:
-    assert_eq!(lctree.path(2, 6).max_weight, 9.0);
-    assert_eq!(lctree.path(2, 6).max_weight_idx, 0);
+    lctree.link(b, a);
+    lctree.link(c, b);
+    lctree.link(d, b);
+    lctree.link(e, a);
+    lctree.link(f, e);
+
+    // We find the node with max weight on the path between c to f,
+    // where a has the maximum weight of 9.0:
+    let heaviest_node = lctree.path(c, f);
+    assert_eq!(heaviest_node.idx, a);
+    assert_eq!(heaviest_node.weight, 9.0);
 }
 ```
 </details>

@@ -1,7 +1,39 @@
-use lctree::LinkCutTree;
+use lctree::{FindMax, LinkCutTree};
 use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
 use rand_derive2::RandGen;
 use std::collections::{HashMap, HashSet};
+
+#[test]
+pub fn intro() {
+    // We form a link-cut tree from the following rooted tree
+    // (the numbers in parentheses are the weights of the nodes):
+    //           a(9)
+    //           /  \
+    //         b(1)  e(2)
+    //        /   \    \
+    //      c(8)  d(0)  f(4)
+
+    // Replace FindMax with FindMin or FindSum, depending on your usage:
+    let mut lctree: LinkCutTree<FindMax> = lctree::LinkCutTree::new();
+    let a = lctree.make_tree(9.);
+    let b = lctree.make_tree(1.);
+    let c = lctree.make_tree(8.);
+    let d = lctree.make_tree(0.);
+    let e = lctree.make_tree(2.);
+    let f = lctree.make_tree(4.);
+
+    lctree.link(b, a);
+    lctree.link(c, b);
+    lctree.link(d, b);
+    lctree.link(e, a);
+    lctree.link(f, e);
+
+    // We find the node with max weight on the path between c to f,
+    // where a has the maximum weight of 9.0:
+    let heaviest_node = lctree.path(c, f);
+    assert_eq!(heaviest_node.idx, a);
+    assert_eq!(heaviest_node.weight, 9.0);
+}
 
 #[test]
 pub fn validation_check() {
