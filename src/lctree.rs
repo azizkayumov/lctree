@@ -186,8 +186,11 @@ impl<P: Path> LinkCutTree<P> {
     /// assert!(!lctree.linked(alice, clay)); // alice and clay are not connected by a link
     /// ```
     pub fn linked(&mut self, v: usize, w: usize) -> bool {
-        self.connected(v, w);
-        self.forest.left_of(w) == Some(v) && self.forest.right_of(v).is_none()
+        if self.connected(v, w) {
+            self.forest.left_of(w) == Some(v) && self.forest.right_of(v).is_none()
+        } else {
+            false
+        }
     }
 
     /// Merges two trees into a single tree.
@@ -206,7 +209,7 @@ impl<P: Path> LinkCutTree<P> {
     /// assert!(lctree.connected(alice, clay));
     /// ```
     pub fn link(&mut self, v: usize, w: usize) -> bool {
-        if !self.connected(v, w) {
+        if self.connected(v, w) {
             return false;
         }
         // v is the root of its represented tree:
