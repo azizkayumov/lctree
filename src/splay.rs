@@ -153,10 +153,6 @@ impl<P: Path> Forest<P> {
     //         3   4        1   3
     fn rotate_left(&mut self, node_idx: usize) {
         assert!(
-            node_idx < self.nodes.len(),
-            "rotate_left: node_idx out of bounds"
-        );
-        assert!(
             self.nodes[node_idx].right.is_some(),
             "rotate_left: node_idx does not have a right child"
         );
@@ -189,10 +185,6 @@ impl<P: Path> Forest<P> {
     //     2   3                3   4
     fn rotate_right(&mut self, node_idx: usize) {
         assert!(
-            node_idx < self.nodes.len(),
-            "rotate_right: node_idx out of bounds"
-        );
-        assert!(
             self.nodes[node_idx].left.is_some(),
             "rotate_right: node_idx does not have a left child"
         );
@@ -218,10 +210,6 @@ impl<P: Path> Forest<P> {
 
     // Rotates the parent of `node_idx` to the right or left, depending on the relationship between.
     fn rotate(&mut self, node_idx: usize) {
-        assert!(
-            node_idx < self.nodes.len(),
-            "rotate: node_idx out of bounds"
-        );
         assert!(
             matches!(self.nodes[node_idx].parent, Parent::Node(_)),
             "rotate: node_idx does not have a parent"
