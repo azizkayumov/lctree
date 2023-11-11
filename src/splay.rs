@@ -153,10 +153,6 @@ impl<P: Path> Forest<P> {
     //         3   4        1   3
     fn rotate_left(&mut self, node_idx: usize) {
         assert!(
-            node_idx < self.nodes.len(),
-            "rotate_left: node_idx out of bounds"
-        );
-        assert!(
             self.nodes[node_idx].right.is_some(),
             "rotate_left: node_idx does not have a right child"
         );
@@ -189,10 +185,6 @@ impl<P: Path> Forest<P> {
     //     2   3                3   4
     fn rotate_right(&mut self, node_idx: usize) {
         assert!(
-            node_idx < self.nodes.len(),
-            "rotate_right: node_idx out of bounds"
-        );
-        assert!(
             self.nodes[node_idx].left.is_some(),
             "rotate_right: node_idx does not have a left child"
         );
@@ -218,10 +210,6 @@ impl<P: Path> Forest<P> {
 
     // Rotates the parent of `node_idx` to the right or left, depending on the relationship between.
     fn rotate(&mut self, node_idx: usize) {
-        assert!(
-            node_idx < self.nodes.len(),
-            "rotate: node_idx out of bounds"
-        );
         assert!(
             matches!(self.nodes[node_idx].parent, Parent::Node(_)),
             "rotate: node_idx does not have a parent"
@@ -270,15 +258,7 @@ impl<P: Path> Forest<P> {
 #[cfg(test)]
 mod tests {
     use super::Forest;
-    use crate::{node, path::FindMax};
-
-    fn create_forest(n: usize) -> Forest<FindMax> {
-        let mut forest = Forest::new();
-        for i in 0..n {
-            forest.create_node(i as f64);
-        }
-        forest
-    }
+    use crate::path::FindMax;
 
     #[test]
     pub fn create_node() {
@@ -330,205 +310,247 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    pub fn rotate_left_invalid() {
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let alice = forest.create_node(0.0);
+        let bob = forest.create_node(0.0);
+        forest.set_left(alice, bob);
+        // Should panic because alice does not have a right child
+        forest.rotate_left(alice);
+    }
+
+    #[test]
     pub fn rotate_left_root() {
-        // form the following tree and rotate left on '0':
-        //         0                2
+        // form the following tree and rotate left on 'a':
+        //         a                c
         //        / \       =>     / \
-        //       1   2            0   4
+        //       b   c            a   e
         //          / \          / \
-        //         3   4        1   3
-        let mut forest = create_forest(5);
-        forest.nodes[0].left = Some(1);
-        forest.nodes[0].right = Some(2);
-        forest.nodes[1].parent = node::Parent::Node(0);
-        forest.nodes[2].parent = node::Parent::Node(0);
-        forest.nodes[2].left = Some(3);
-        forest.nodes[2].right = Some(4);
-        forest.nodes[3].parent = node::Parent::Node(2);
-        forest.nodes[4].parent = node::Parent::Node(2);
-        forest.rotate_left(0);
-        assert!(matches!(forest.nodes[2].parent, node::Parent::Root));
-        assert_eq!(forest.nodes[2].left, Some(0));
-        assert!(matches!(forest.nodes[0].parent, node::Parent::Node(2)));
-        assert_eq!(forest.nodes[2].right, Some(4));
-        assert!(matches!(forest.nodes[4].parent, node::Parent::Node(2)));
-        assert_eq!(forest.nodes[0].left, Some(1));
-        assert!(matches!(forest.nodes[1].parent, node::Parent::Node(0)));
-        assert_eq!(forest.nodes[0].right, Some(3));
-        assert!(matches!(forest.nodes[3].parent, node::Parent::Node(0)));
-        assert!(forest.nodes[1].left.is_none());
-        assert!(forest.nodes[1].right.is_none());
-        assert!(forest.nodes[3].left.is_none());
-        assert!(forest.nodes[3].right.is_none());
+        //         d   e        b   d
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let a = forest.create_node(0.0);
+        let b = forest.create_node(0.0);
+        let c = forest.create_node(0.0);
+        let d = forest.create_node(0.0);
+        let e = forest.create_node(0.0);
+        forest.set_left(a, b);
+        forest.set_right(a, c);
+        forest.set_left(c, d);
+        forest.set_right(c, e);
+        forest.rotate_left(a);
+
+        assert!(forest.parent_of(c).is_none());
+        assert!(forest.path_parent_of(c).is_none());
+        assert_eq!(forest.left_of(c), Some(a));
+        assert_eq!(forest.parent_of(a), Some(c));
+        assert_eq!(forest.right_of(c), Some(e));
+        assert_eq!(forest.parent_of(e), Some(c));
+        assert_eq!(forest.left_of(a), Some(b));
+        assert_eq!(forest.parent_of(b), Some(a));
+        assert_eq!(forest.right_of(a), Some(d));
+        assert_eq!(forest.parent_of(d), Some(a));
+        assert!(forest.left_of(b).is_none());
+        assert!(forest.right_of(b).is_none());
+        assert!(forest.left_of(d).is_none());
+        assert!(forest.right_of(d).is_none());
+        assert!(forest.left_of(e).is_none());
+        assert!(forest.right_of(e).is_none());
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn rotate_right_invalid() {
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let alice = forest.create_node(0.0);
+        let bob = forest.create_node(0.0);
+        forest.set_right(alice, bob);
+        // Should panic because alice does not have a left child
+        forest.rotate_right(alice);
     }
 
     #[test]
     pub fn rotate_right_root() {
-        // form the tree and rotate left on '0':
-        //         0                1
+        // form the tree and rotate right on 'a':
+        //         a                b
         //        / \       =>     / \
-        //       1   4            2   0
+        //       b   e            c   a
         //      / \                  / \
-        //     2   3                3   4
-        let mut forest = create_forest(5);
-        forest.nodes[0].left = Some(1);
-        forest.nodes[0].right = Some(4);
-        forest.nodes[1].parent = node::Parent::Node(0);
-        forest.nodes[4].parent = node::Parent::Node(0);
-        forest.nodes[1].left = Some(2);
-        forest.nodes[1].right = Some(3);
-        forest.nodes[2].parent = node::Parent::Node(1);
-        forest.nodes[3].parent = node::Parent::Node(1);
+        //     c   d                d   e
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let a = forest.create_node(0.0);
+        let b = forest.create_node(0.0);
+        let c = forest.create_node(0.0);
+        let d = forest.create_node(0.0);
+        let e = forest.create_node(0.0);
+        forest.set_left(a, b);
+        forest.set_right(a, e);
+        forest.set_left(b, c);
+        forest.set_right(b, d);
         forest.rotate_right(0);
-        assert!(matches!(forest.nodes[1].parent, node::Parent::Root));
-        assert_eq!(forest.nodes[1].left, Some(2));
-        assert!(matches!(forest.nodes[2].parent, node::Parent::Node(1)));
-        assert_eq!(forest.nodes[1].right, Some(0));
-        assert!(matches!(forest.nodes[0].parent, node::Parent::Node(1)));
-        assert_eq!(forest.nodes[0].left, Some(3));
-        assert!(matches!(forest.nodes[3].parent, node::Parent::Node(0)));
-        assert_eq!(forest.nodes[0].right, Some(4));
-        assert!(matches!(forest.nodes[4].parent, node::Parent::Node(0)));
-        assert!(forest.nodes[3].left.is_none());
-        assert!(forest.nodes[3].right.is_none());
-        assert!(forest.nodes[4].left.is_none());
-        assert!(forest.nodes[4].right.is_none());
+
+        assert!(forest.parent_of(b).is_none());
+        assert!(forest.path_parent_of(b).is_none());
+        assert_eq!(forest.left_of(b), Some(c));
+        assert_eq!(forest.right_of(b), Some(a));
+        assert_eq!(forest.parent_of(c), Some(b));
+        assert_eq!(forest.parent_of(a), Some(b));
+        assert_eq!(forest.left_of(a), Some(d));
+        assert_eq!(forest.right_of(a), Some(e));
+        assert_eq!(forest.parent_of(d), Some(a));
+        assert_eq!(forest.parent_of(e), Some(a));
+        assert!(forest.left_of(c).is_none());
+        assert!(forest.right_of(c).is_none());
+        assert!(forest.left_of(d).is_none());
+        assert!(forest.right_of(d).is_none());
+        assert!(forest.left_of(e).is_none());
+        assert!(forest.right_of(e).is_none());
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn rotate_invalid() {
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let alice = forest.create_node(0.0);
+        let bob = forest.create_node(0.0);
+        forest.set_left(alice, bob);
+        // Should panic because alice does not have a parent
+        forest.rotate(alice);
     }
 
     #[test]
     pub fn rotate_parent_left() {
         // form the tree and rotate on '1':
-        //      0              1
+        //      a              b
         //     /       =>       \
-        //    1                  0
-        let mut forest = create_forest(2);
-        forest.nodes[0].left = Some(1);
-        forest.nodes[1].parent = node::Parent::Node(0);
-        forest.rotate(1);
-        assert!(matches!(forest.nodes[1].parent, node::Parent::Root));
-        assert_eq!(forest.nodes[1].left, None);
-        assert_eq!(forest.nodes[1].right, Some(0));
-        assert!(matches!(forest.nodes[0].parent, node::Parent::Node(1)));
-        assert!(forest.nodes[0].left.is_none());
-        assert!(forest.nodes[0].right.is_none());
+        //    b                  a
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let a = forest.create_node(0.0);
+        let b = forest.create_node(0.0);
+        forest.set_left(a, b);
+        forest.rotate(b);
+        assert!(forest.parent_of(b).is_none());
+        assert!(forest.path_parent_of(b).is_none());
+        assert!(forest.left_of(b).is_none());
+        assert_eq!(forest.right_of(b), Some(a));
+        assert_eq!(forest.parent_of(a), Some(b));
+        assert!(forest.left_of(a).is_none());
+        assert!(forest.right_of(a).is_none());
     }
 
     #[test]
     pub fn rotate_parent_right() {
         // form the tree and rotate on '1':
-        //    0                 1
+        //    a                 b
         //     \        =>     /
-        //      1             0
-        let mut forest = create_forest(2);
-        forest.nodes[0].right = Some(1);
-        forest.nodes[1].parent = node::Parent::Node(0);
-        forest.rotate(1);
-        assert!(matches!(forest.nodes[1].parent, node::Parent::Root));
-        assert_eq!(forest.nodes[1].left, Some(0));
-        assert_eq!(forest.nodes[1].right, None);
-        assert!(matches!(forest.nodes[0].parent, node::Parent::Node(1)));
-        assert!(forest.nodes[0].left.is_none());
-        assert!(forest.nodes[0].right.is_none());
+        //      b             a
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let a = forest.create_node(0.0);
+        let b = forest.create_node(0.0);
+        forest.set_right(a, b);
+        forest.rotate(b);
+        assert!(forest.parent_of(b).is_none());
+        assert!(forest.path_parent_of(b).is_none());
+        assert!(forest.right_of(b).is_none());
+        assert_eq!(forest.left_of(b), Some(a));
+        assert_eq!(forest.parent_of(a), Some(b));
+        assert!(forest.left_of(a).is_none());
+        assert!(forest.right_of(a).is_none());
     }
 
     #[test]
     pub fn splay_leaf() {
         // form the tree and splay on '2':
-        //   0                  2
+        //   a                  c
         //    \       =>       / \
-        //     1              0   1
+        //     b              a   b
         //    /
-        //   2
-        let mut forest = create_forest(3);
-        forest.nodes[0].right = Some(1);
-        forest.nodes[1].parent = node::Parent::Node(0);
-        forest.nodes[1].left = Some(2);
-        forest.nodes[2].parent = node::Parent::Node(1);
-        forest.splay(2);
-        assert!(matches!(forest.nodes[2].parent, node::Parent::Root));
-        assert_eq!(forest.nodes[2].left, Some(0));
-        assert_eq!(forest.nodes[2].right, Some(1));
-        assert!(matches!(forest.nodes[0].parent, node::Parent::Node(2)));
-        assert!(matches!(forest.nodes[1].parent, node::Parent::Node(2)));
+        //   c
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let a = forest.create_node(0.0);
+        let b = forest.create_node(0.0);
+        let c = forest.create_node(0.0);
+        forest.set_right(a, b);
+        forest.set_left(b, c);
+        forest.splay(c);
+        assert!(forest.parent_of(c).is_none());
+        assert!(forest.path_parent_of(c).is_none());
+        assert_eq!(forest.left_of(c), Some(a));
+        assert_eq!(forest.parent_of(a), Some(c));
+        assert_eq!(forest.right_of(c), Some(b));
+        assert_eq!(forest.parent_of(b), Some(c));
+        assert!(forest.left_of(a).is_none());
+        assert!(forest.right_of(a).is_none());
+        assert!(forest.left_of(b).is_none());
+        assert!(forest.right_of(b).is_none());
     }
 
     #[test]
     pub fn splay_internal_node() {
         // form the tree and splay on '1':
-        //   0                  1
+        //   a                  b
         //    \       =>       /
-        //     1              0
+        //     b              a
         //    /                \
-        //   2                  2
-        let mut forest = create_forest(3);
-        forest.nodes[0].right = Some(1);
-        forest.nodes[1].parent = node::Parent::Node(0);
-        forest.nodes[1].left = Some(2);
-        forest.nodes[2].parent = node::Parent::Node(1);
-        forest.splay(1);
-        assert!(matches!(forest.nodes[1].parent, node::Parent::Root));
-        assert_eq!(forest.nodes[1].left, Some(0));
-        assert_eq!(forest.nodes[1].right, None);
-        assert!(matches!(forest.nodes[0].parent, node::Parent::Node(1)));
-        assert_eq!(forest.nodes[0].left, None);
-        assert_eq!(forest.nodes[0].right, Some(2));
-        assert!(matches!(forest.nodes[2].parent, node::Parent::Node(0)));
-        assert!(forest.nodes[2].left.is_none());
-        assert!(forest.nodes[2].right.is_none());
+        //   c                  c
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let a = forest.create_node(0.0);
+        let b = forest.create_node(0.0);
+        let c = forest.create_node(0.0);
+        forest.set_right(a, b);
+        forest.set_left(b, c);
+        forest.splay(b);
+        assert!(forest.parent_of(b).is_none());
+        assert!(forest.path_parent_of(b).is_none());
+        assert_eq!(forest.left_of(b), Some(a));
+        assert!(forest.right_of(b).is_none());
+        assert_eq!(forest.parent_of(a), Some(b));
+        assert_eq!(forest.right_of(a), Some(c));
+        assert_eq!(forest.parent_of(c), Some(a));
+        assert!(forest.left_of(a).is_none());
+        assert!(forest.left_of(c).is_none());
+        assert!(forest.right_of(c).is_none());
     }
 
     #[test]
     pub fn splay_preserve_path_pointer() {
-        // Node '0' has a path pointer to Node '6',
+        // Node 'a' has a path pointer to Node 'p',
         // the remaning nodes are represented in a Splay-tree as given below.
-        // splaying a leaf node '4' should result in:
-        //    6              6                6
-        //    |              |                |
-        //    0              0                4
-        //     \              \              / \
-        //      1     =>       4      =>    0   1
-        //     /              / \            \
-        //    2              2   1            2
-        //   / \            /                /
-        //  3   4          3                3
-        //
-        let mut forest = create_forest(6);
-        forest.nodes[0].parent = node::Parent::Path(6);
-        forest.nodes[0].right = Some(1);
-        forest.nodes[1].parent = node::Parent::Node(0);
-        forest.nodes[1].left = Some(2);
-        forest.nodes[2].parent = node::Parent::Node(1);
-        forest.nodes[2].left = Some(3);
-        forest.nodes[3].parent = node::Parent::Node(2);
-        forest.nodes[2].right = Some(4);
-        forest.nodes[4].parent = node::Parent::Node(2);
-        forest.splay(4);
-        // The path pointer to Node '6' should be preserved:
-        assert!(matches!(forest.nodes[4].parent, node::Parent::Path(6)));
-        // The rest of the tree should be a rotated Splay-tree:
-        assert_eq!(forest.nodes[4].left, Some(0));
-        assert!(matches!(forest.nodes[0].parent, node::Parent::Node(4)));
-        assert_eq!(forest.nodes[4].right, Some(1));
-        assert!(matches!(forest.nodes[1].parent, node::Parent::Node(4)));
-        assert_eq!(forest.nodes[0].right, Some(2));
-        assert!(matches!(forest.nodes[2].parent, node::Parent::Node(0)));
-        assert_eq!(forest.nodes[2].left, Some(3));
-        assert!(matches!(forest.nodes[3].parent, node::Parent::Node(2)));
+        // splaying a leaf node 'c' should result in the following tree and
+        // preserve the path pointer to Node 'p':
+        //    p              p
+        //    |              |
+        //    a              c
+        //     \            / \
+        //      b     =>   a   b
+        //     /
+        //    c
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let a = forest.create_node(0.0);
+        let b = forest.create_node(0.0);
+        let c = forest.create_node(0.0);
+        let p = forest.create_node(0.0);
+        forest.set_right(a, b);
+        forest.set_left(b, c);
+        forest.set_right(p, a);
+        forest.remove_preferred_child(p);
+        assert_eq!(forest.path_parent_of(a), Some(p));
+
+        forest.splay(c);
+        assert!(forest.parent_of(c).is_none());
+        assert_eq!(forest.path_parent_of(c), Some(p));
     }
 
     #[test]
     pub fn toggle_flip() {
-        let mut forest = create_forest(3);
-        forest.nodes[0].left = Some(1);
-        forest.nodes[0].right = Some(2);
-        forest.nodes[1].parent = node::Parent::Node(0);
-        forest.nodes[2].parent = node::Parent::Node(0);
-        forest.nodes[0].flipped = true;
-        forest.normalize(0);
-        assert!(!forest.nodes[0].flipped);
-        assert!(forest.nodes[1].flipped);
-        assert!(forest.nodes[2].flipped);
-        assert_eq!(forest.nodes[0].left, Some(2));
-        assert_eq!(forest.nodes[0].right, Some(1));
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let a = forest.create_node(0.0);
+        let b = forest.create_node(0.0);
+        let c = forest.create_node(0.0);
+        forest.set_left(a, b);
+        forest.set_right(a, c);
+        forest.flip(a);
+        assert_eq!(forest.left_of(a), Some(c));
+        assert_eq!(forest.right_of(a), Some(b));
     }
 }

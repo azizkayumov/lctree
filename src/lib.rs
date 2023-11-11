@@ -9,12 +9,9 @@
 //! This crate implements link-cut tree for unrooted trees, which means all of the above operations
 //! can be performed on any two nodes in the forest.
 //!
-//! # Path aggregation
-//! Common path aggregates are provided as follows:
-//! - `findmax(v, w)`: returns the maximum value on a path between nodes `v` and `w`.
-//! - `findmin(v, w)`: returns the minimum value on a path between nodes `v` and `w`.
-//! - `findsum(v, w)`: returns the sum of values on a path between nodes `v` and `w`.
-//! A custom aggregation function can also be implemented by using the [Path] trait.
+//! # Path operations
+//! The most common path aggregates are supported: `FindMax`, `FindMin`, and `FindSum`.
+//! A custom path aggregate function can be implemented by using the [Path] trait.
 //!
 //! # Tree creation and removal
 //! Tree nodes are created and removed using the following operations:
