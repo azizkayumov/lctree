@@ -39,6 +39,7 @@ impl<T: Path> Node<T> {
     }
 
     #[allow(dead_code)]
+    #[cfg_attr(tarpaulin, ignore)]
     pub fn to_str(&self) -> String {
         let parent = match self.parent {
             Parent::Node(idx) => format!("Node({idx})"),
