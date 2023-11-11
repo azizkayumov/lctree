@@ -167,6 +167,29 @@ impl<P: Path> LinkCutTree<P> {
         self.forest.parent_of(v).is_some() || v == w
     }
 
+    /// Checks if two nodes are connected by a link
+    /// (i.e. v is the parent of w or vice versa).
+    ///
+    /// # Examples
+    /// ```
+    /// use lctree::LinkCutTree;
+    ///
+    /// let mut lctree = LinkCutTree::default();
+    /// let alice = lctree.make_tree(0.0);
+    /// let bob = lctree.make_tree(0.0);
+    /// let clay = lctree.make_tree(0.0);
+    ///
+    /// lctree.link(alice, bob);
+    /// lctree.link(bob, clay);
+    ///
+    /// assert!(lctree.linked(alice, bob)); // alice and bob are connected by a link
+    /// assert!(!lctree.linked(alice, clay)); // alice and clay are not connected by a link
+    /// ```
+    pub fn linked(&mut self, v: usize, w: usize) -> bool {
+        self.connected(v, w);
+        self.forest.left_of(w) == Some(v) && self.forest.right_of(v).is_none()
+    }
+
     /// Merges two trees into a single tree.
     ///
     /// # Examples
@@ -182,12 +205,13 @@ impl<P: Path> LinkCutTree<P> {
     /// lctree.link(bob, clay);
     /// assert!(lctree.connected(alice, clay));
     /// ```
-    pub fn link(&mut self, v: usize, w: usize) {
-        if self.connected(v, w) {
-            return;
+    pub fn link(&mut self, v: usize, w: usize) -> bool {
+        if !self.connected(v, w) {
+            return false;
         }
         // v is the root of its represented tree:
         self.forest.set_left(v, w);
+        true
     }
 
     /// Cuts the link between two nodes (if it exists)
@@ -207,19 +231,12 @@ impl<P: Path> LinkCutTree<P> {
     /// lctree.cut(alice, bob);
     /// assert!(!lctree.connected(alice, bob)); // not connected again
     /// ```
-    pub fn cut(&mut self, v: usize, w: usize) {
-        if !self.connected(v, w) {
-            return;
+    pub fn cut(&mut self, v: usize, w: usize) -> bool {
+        if !self.linked(v, w) {
+            return false;
         }
-        // detach w from its parent (which is v)
-        if let Some(left) = self.forest.left_of(w) {
-            if left != v || self.forest.right_of(v).is_some() {
-                // maybe this should be a panic?
-                // eprintln!("Error: no link between {v} and {w}");
-                return;
-            }
-            self.forest.cut_left(w);
-        }
+        self.forest.cut_left(w);
+        true
     }
 
     /// Performs path aggregation on a path between two nodes (if they are connected)
@@ -389,6 +406,21 @@ mod tests {
 
         // They should still be connected:
         assert!(lctree.connected(d, a));
+    }
+
+    #[test]
+    pub fn linked() {
+        let mut lctree = super::LinkCutTree::default();
+        let alice = lctree.make_tree(0.0);
+        let bob = lctree.make_tree(0.0);
+        let clay = lctree.make_tree(0.0);
+
+        lctree.link(alice, bob);
+        lctree.link(bob, clay);
+
+        assert!(lctree.linked(alice, bob));
+        assert!(lctree.linked(bob, clay));
+        assert!(!lctree.linked(alice, clay));
     }
 
     #[test]
