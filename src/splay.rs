@@ -322,6 +322,17 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    pub fn rotate_left_invalid() {
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let alice = forest.create_node(0.0);
+        let bob = forest.create_node(0.0);
+        forest.set_left(alice, bob);
+        // Should panic because alice does not have a right child
+        forest.rotate_left(alice);
+    }
+
+    #[test]
     pub fn rotate_left_root() {
         // form the following tree and rotate left on 'a':
         //         a                c
@@ -360,6 +371,17 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    pub fn rotate_right_invalid() {
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let alice = forest.create_node(0.0);
+        let bob = forest.create_node(0.0);
+        forest.set_right(alice, bob);
+        // Should panic because alice does not have a left child
+        forest.rotate_right(alice);
+    }
+
+    #[test]
     pub fn rotate_right_root() {
         // form the tree and rotate right on 'a':
         //         a                b
@@ -395,6 +417,17 @@ mod tests {
         assert!(forest.right_of(d).is_none());
         assert!(forest.left_of(e).is_none());
         assert!(forest.right_of(e).is_none());
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn rotate_invalid() {
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let alice = forest.create_node(0.0);
+        let bob = forest.create_node(0.0);
+        forest.set_left(alice, bob);
+        // Should panic because alice does not have a parent
+        forest.rotate(alice);
     }
 
     #[test]
