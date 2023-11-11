@@ -1,5 +1,6 @@
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/azizkayumov/lctree/ci.yml?style=plastic)](#)
 [![crates.io](https://img.shields.io/crates/v/lctree)](https://crates.io/crates/lctree)
+[![codecov](https://codecov.io/gh/azizkayumov/lctree/graph/badge.svg?token=RBW7UKFCS0)](https://codecov.io/gh/azizkayumov/lctree)
 
 # lctree
 Rust implementation of [Link-cut tree](https://dl.acm.org/doi/pdf/10.1145/800076.802464): self-balancing data structure to maintain a dynamic forest of (un)rooted trees under the following operations that take `O(logn)` amortized time:
