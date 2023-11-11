@@ -559,4 +559,22 @@ mod tests {
         assert_eq!(lctree.path(4, 3).sum, 15.);
         assert_eq!(lctree.path(5, 7).sum, 9.);
     }
+
+    #[test]
+    pub fn test_extend_forest() {
+        let weights = vec![1.0, 2.0, 3.0];
+        let mut lctree = LinkCutTree::default();
+        let trees_ids = lctree.extend_forest(&weights);
+        assert_eq!(trees_ids, vec![0, 1, 2]);
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn delete_tree() {
+        let mut lctree = LinkCutTree::default();
+        let alice = lctree.make_tree(0.0);
+        let bob = lctree.make_tree(1.0);
+        lctree.link(alice, bob);
+        lctree.remove_tree(alice); // should panic
+    }
 }

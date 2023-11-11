@@ -281,6 +281,55 @@ mod tests {
     }
 
     #[test]
+    pub fn create_node() {
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let alice = forest.create_node(0.0);
+        let bob = forest.create_node(1.0);
+        let charlie = forest.create_node(2.0);
+        assert_eq!([alice, bob, charlie], [0, 1, 2]);
+
+        forest.delete_node(bob);
+        let david = forest.create_node(4.0);
+        // Should reuse the space of bob's tree (which was removed)
+        assert_eq!(david, bob);
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn set_right() {
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let alice = forest.create_node(0.0);
+        let bob = forest.create_node(1.0);
+        forest.set_right(alice, bob);
+        let charlie = forest.create_node(2.0);
+        // Should panic because alice already has a right child
+        forest.set_right(alice, charlie);
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn set_left() {
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let alice = forest.create_node(0.0);
+        let bob = forest.create_node(1.0);
+        forest.set_left(alice, bob);
+        let charlie = forest.create_node(2.0);
+        // Should panic because alice already has a left child
+        forest.set_left(alice, charlie);
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn cut_left() {
+        let mut forest: Forest<FindMax> = super::Forest::new();
+        let alice = forest.create_node(0.0);
+        let bob = forest.create_node(1.0);
+        forest.set_left(alice, bob);
+        // Should panic because alice does not have a left child
+        forest.cut_left(bob);
+    }
+
+    #[test]
     pub fn rotate_left_root() {
         // form the following tree and rotate left on '0':
         //         0                2
