@@ -276,173 +276,203 @@ mod tests {
     #[test]
     pub fn link_cut() {
         // We form a link-cut tree from the following rooted tree:
-        //     0
+        //     a
         //    / \
-        //   1   6
+        //   b   e
         //  / \   \
-        // 2   3   7
-        //    / \   \
-        //   4   5   8
-        //          /
-        //         9
+        // c   d   f
+
         let mut lctree = super::LinkCutTree::default();
-        for i in 0..10 {
-            lctree.make_tree(i as f64);
-        }
-        lctree.link(1, 0);
-        lctree.link(2, 1);
-        lctree.link(3, 1);
-        lctree.link(4, 3);
-        lctree.link(5, 3);
-        lctree.link(6, 0);
-        lctree.link(7, 6);
-        lctree.link(8, 7);
-        lctree.link(9, 8);
+        let a = lctree.make_tree(0.0);
+        let b = lctree.make_tree(0.0);
+        let c = lctree.make_tree(0.0);
+        let d = lctree.make_tree(0.0);
+        let e = lctree.make_tree(0.0);
+        let f = lctree.make_tree(0.0);
+
+        lctree.link(b, a);
+        lctree.link(c, b);
+        lctree.link(d, b);
+        lctree.link(e, a);
+        lctree.link(f, e);
 
         // Checking connectivity:
-        for i in 0..10 {
-            for j in 0..10 {
+        let nodes = [a, b, c, d, e, f];
+        for i in nodes {
+            for j in nodes {
                 assert!(lctree.connected(i, j));
             }
         }
 
-        // We cut node 6 from its parent 0:
-        lctree.cut(6, 0);
+        // We cut node e from its parent a:
+        lctree.cut(e, a);
 
         // The forest should now look like this:
-        //         0
-        //        /
-        //       1        6
-        //      / \        \
-        //     2   3        7
-        //        / \        \
-        //       4   5        8
-        //                   /
-        //                  9
+        //     a
+        //    /
+        //   b      e
+        //  / \      \
+        // c   d      f
 
         // We check connectivity again for the two trees:
-        for i in 0..6 {
-            for j in 0..6 {
+        let left_tree = [a, b, c, d];
+        let right_tree = [e, f];
+        for i in left_tree {
+            for j in left_tree {
                 assert!(lctree.connected(i, j));
             }
         }
-        for i in 6..10 {
-            for j in 6..10 {
+        for i in right_tree {
+            for j in right_tree {
                 assert!(lctree.connected(i, j));
             }
         }
-        for i in 0..6 {
-            for j in 6..10 {
-                assert!(!lctree.connected(i, j));
+        for left in left_tree {
+            for right in right_tree {
+                assert!(!lctree.connected(left, right));
             }
         }
     }
 
     #[test]
-    pub fn cut_non_existing_edge() {
-        // We form a link-cut tree from the following rooted tree:
-        //     0
-        //    / \
-        //   1   2
-        //       |
-        //       3
+    pub fn invalid_link() {
         let mut lctree = super::LinkCutTree::default();
-        for i in 0..4 {
-            lctree.make_tree(i as f64);
-        }
-        lctree.link(1, 0);
-        lctree.link(2, 0);
-        lctree.link(3, 2);
+        let alice = lctree.make_tree(0.0);
+        let bob = lctree.make_tree(10.0);
+        let clay = lctree.make_tree(2.0);
+        lctree.link(alice, bob);
+        lctree.link(bob, clay);
+        lctree.link(alice, clay); // should do nothing
+
+        // bob should have the max weight in the path from alice to clay:
+        let heaviest_node = lctree.path(alice, clay);
+        assert_eq!(heaviest_node.idx, bob);
+        assert_eq!(heaviest_node.weight, 10.0);
+    }
+
+    #[test]
+    pub fn invalid_cut() {
+        let mut lctree = super::LinkCutTree::default();
+        let alice = lctree.make_tree(0.0);
+        let bob = lctree.make_tree(10.0);
+        let clay = lctree.make_tree(2.0);
+        lctree.link(alice, bob);
+
+        let path = lctree.path(alice, clay);
+        lctree.cut(alice, clay); // should do nothing
+        let same_path = lctree.path(alice, clay);
+        // path from alice to clay should be the same as before:
+        assert_eq!(path.idx, same_path.idx);
+        assert_eq!(path.weight, same_path.weight);
+    }
+
+    #[test]
+    pub fn connected_but_no_edge_to_cut() {
+        // We form a link-cut tree from the following rooted tree:
+        //     a
+        //    / \
+        //   b   c
+        //        \
+        //         d
+        let mut lctree = super::LinkCutTree::default();
+        let a = lctree.make_tree(0.0);
+        let b = lctree.make_tree(0.0);
+        let c = lctree.make_tree(0.0);
+        let d = lctree.make_tree(0.0);
+
+        lctree.link(b, a);
+        lctree.link(c, a);
+        lctree.link(d, c);
 
         // Try to cut non-existing edge:
-        lctree.cut(1, 3); // should do nothing
+        lctree.cut(d, a); // should do nothing
 
         // They should still be connected:
-        assert!(lctree.connected(1, 3));
+        assert!(lctree.connected(d, a));
     }
 
     #[test]
     pub fn findroot() {
         // We form a link-cut tree from the following rooted tree:
-        //     0
+        //     a
         //    / \
-        //   1   6
+        //   b   e
         //  / \   \
-        // 2   3   7
-        //    / \   \
-        //   4   5   8
-        //          /
-        //         9
+        // c   d   f
         let mut lctree = super::LinkCutTree::default();
-        for i in 0..10 {
-            lctree.make_tree(i as f64);
-        }
-        lctree.link(1, 0);
-        lctree.link(2, 1);
-        lctree.link(3, 1);
-        lctree.link(4, 3);
-        lctree.link(5, 3);
-        lctree.link(6, 0);
-        lctree.link(7, 6);
-        lctree.link(8, 7);
-        lctree.link(9, 8);
+        let a = lctree.make_tree(0.0);
+        let b = lctree.make_tree(0.0);
+        let c = lctree.make_tree(0.0);
+        let d = lctree.make_tree(0.0);
+        let e = lctree.make_tree(0.0);
+        let f = lctree.make_tree(0.0);
+        lctree.link(b, a);
+        lctree.link(c, b);
+        lctree.link(d, b);
+        lctree.link(e, a);
+        lctree.link(f, e);
 
         // Checking findroot:
-        for i in 0..10 {
-            assert_eq!(lctree.findroot(i), 0);
+        let nodes = [a, b, c, d, e, f];
+        for i in nodes {
+            assert_eq!(lctree.findroot(i), a);
         }
 
-        // We cut node 6 from its parent 0:
-        lctree.cut(6, 0);
+        // We cut node e from its parent a:
+        lctree.cut(e, a);
 
-        // the forest should now look like this:
-        //         0
-        //        /
-        //       1        6
-        //      / \        \
-        //     2   3        7
-        //        / \        \
-        //       4   5        8
-        //                   /
-        //                  9
+        // The forest should now look like this:
+        //     a
+        //    /
+        //   b      e
+        //  / \      \
+        // c   d      f
 
         // We check findroot again for the two trees:
-        for i in 0..6 {
-            assert_eq!(lctree.findroot(i), 0);
+        let left_tree = [a, b, c, d];
+        for i in left_tree {
+            assert_eq!(lctree.findroot(i), a);
         }
 
-        for i in 6..10 {
-            assert_eq!(lctree.findroot(i), 6);
+        let right_tree = [e, f];
+        for i in right_tree {
+            assert_eq!(lctree.findroot(i), e);
         }
     }
 
     #[test]
     pub fn reroot() {
         // We form a link-cut tree from the following rooted tree:
-        //     0
+        //     a
         //    / \
-        //   1   4
-        //  / \
-        // 2   3
+        //   b   e
+        //  / \   \
+        // c   d   f
         let mut lctree = super::LinkCutTree::default();
-        for i in 0..5 {
-            lctree.make_tree(i as f64);
+        let a = lctree.make_tree(0.0);
+        let b = lctree.make_tree(0.0);
+        let c = lctree.make_tree(0.0);
+        let d = lctree.make_tree(0.0);
+        let e = lctree.make_tree(0.0);
+        let f = lctree.make_tree(0.0);
+        lctree.link(b, a);
+        lctree.link(c, b);
+        lctree.link(d, b);
+        lctree.link(e, a);
+        lctree.link(f, e);
+
+        // Checking findroot (which should be a for all nodes):
+        let nodes = [a, b, c, d, e, f];
+        for i in nodes {
+            assert_eq!(lctree.findroot(i), a);
         }
-        lctree.link(1, 0);
-        lctree.link(2, 1);
-        lctree.link(3, 1);
-        lctree.link(4, 0);
 
-        // Checking findroot (which should be 0 for all nodes):
-        for i in 0..5 {
-            assert_eq!(lctree.findroot(i), 0);
-        }
+        // we make b the root of the tree:
+        lctree.reroot(b);
 
-        // we make 1 the root of the tree:
-        lctree.reroot(1);
-
-        for i in 0..5 {
-            assert_eq!(lctree.findroot(i), 1);
+        // The root of the tree should now be b:
+        for i in nodes {
+            assert_eq!(lctree.findroot(i), b);
         }
     }
 
@@ -450,114 +480,92 @@ mod tests {
     pub fn findmax() {
         // We form a link-cut tree from the following rooted tree
         // (the numbers in parentheses are the weights of the nodes):
-        //           0(9)
-        //           /  \
-        //         1(1)  5(2)
-        //        /   \    \
-        //      2(8)  3(0) 6(4)
-        //      /             \
-        //    4(6)            7(3)
-        //                    /  \
-        //                  8(7) 9(5)
+        //         a(0)
+        //        /    \
+        //     b(10)   e(7)
+        //     /   \     \
+        //   c(3)  d(11)  f(2)
         let mut lctree = super::LinkCutTree::default();
-        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
-        for i in 0..weights.len() {
-            lctree.make_tree(weights[i]);
-        }
-        lctree.link(1, 0);
-        lctree.link(2, 1);
-        lctree.link(3, 1);
-        lctree.link(4, 2);
-        lctree.link(5, 0);
-        lctree.link(6, 5);
-        lctree.link(7, 6);
-        lctree.link(8, 7);
-        lctree.link(9, 7);
+        let a = lctree.make_tree(0.0);
+        let b = lctree.make_tree(10.);
+        let c = lctree.make_tree(3.);
+        let d = lctree.make_tree(11.);
+        let e = lctree.make_tree(7.);
+        let f = lctree.make_tree(2.);
+
+        lctree.link(b, a);
+        lctree.link(c, b);
+        lctree.link(d, b);
+        lctree.link(e, a);
+        lctree.link(f, e);
 
         // We check the node index with max weight in the path from each node to the root:
-        assert_eq!(lctree.path(4, 5).idx, 0);
-        assert_eq!(lctree.path(3, 6).idx, 0);
-        assert_eq!(lctree.path(2, 7).idx, 0);
-        assert_eq!(lctree.path(1, 8).idx, 0);
-        assert_eq!(lctree.path(0, 9).idx, 0);
-        assert_eq!(lctree.path(4, 3).idx, 2);
-        assert_eq!(lctree.path(5, 7).idx, 6);
+        assert_eq!(lctree.path(c, f).idx, b);
+        assert_eq!(lctree.path(d, f).idx, d);
+        assert_eq!(lctree.path(a, f).idx, e);
+        assert_eq!(lctree.path(a, a).idx, a);
     }
 
     #[test]
     pub fn findmin() {
         // We form a link-cut tree from the following rooted tree
         // (the numbers in parentheses are the weights of the nodes):
-        //           0(9)
-        //           /  \
-        //         1(1)  5(2)
-        //        /   \    \
-        //      2(8)  3(0) 6(4)
-        //      /             \
-        //    4(6)            7(3)
-        //                    /  \
-        //                  8(7) 9(5)
+        //         a(0)
+        //        /    \
+        //     b(10)   e(7)
+        //     /   \     \
+        //   c(3)  d(11)  f(2)
         let mut lctree: LinkCutTree<FindMin> = super::LinkCutTree::new();
-        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
-        for i in 0..weights.len() {
-            lctree.make_tree(weights[i]);
-        }
-        lctree.link(1, 0);
-        lctree.link(2, 1);
-        lctree.link(3, 1);
-        lctree.link(4, 2);
-        lctree.link(5, 0);
-        lctree.link(6, 5);
-        lctree.link(7, 6);
-        lctree.link(8, 7);
-        lctree.link(9, 7);
+        let a = lctree.make_tree(0.0);
+        let b = lctree.make_tree(10.);
+        let c = lctree.make_tree(3.);
+        let d = lctree.make_tree(11.);
+        let e = lctree.make_tree(7.);
+        let f = lctree.make_tree(2.);
+
+        lctree.link(b, a);
+        lctree.link(c, b);
+        lctree.link(d, b);
+        lctree.link(e, a);
+        lctree.link(f, e);
 
         // We check the node index with max weight in the path from each node to the root:
-        assert_eq!(lctree.path(4, 5).idx, 1);
-        assert_eq!(lctree.path(3, 6).idx, 3);
-        assert_eq!(lctree.path(2, 7).idx, 1);
-        assert_eq!(lctree.path(1, 8).idx, 1);
-        assert_eq!(lctree.path(0, 9).idx, 5);
-        assert_eq!(lctree.path(4, 3).idx, 3);
-        assert_eq!(lctree.path(5, 7).idx, 5);
+        assert_eq!(lctree.path(c, f).idx, a);
+        assert_eq!(lctree.path(d, f).idx, a);
+        assert_eq!(lctree.path(a, f).idx, a);
+        assert_eq!(lctree.path(e, f).idx, f);
+        assert_eq!(lctree.path(c, d).idx, c);
     }
 
     #[test]
     pub fn findsum() {
         // We form a link-cut tree from the following rooted tree
         // (the numbers in parentheses are the weights of the nodes):
-        //           0(9)
-        //           /  \
-        //         1(1)  5(2)
-        //        /   \    \
-        //      2(8)  3(0) 6(4)
-        //      /             \
-        //    4(6)            7(3)
-        //                    /  \
-        //                  8(7) 9(5)
+        //         a(0)
+        //        /    \
+        //     b(10)   e(7)
+        //     /   \     \
+        //   c(3)  d(11)  f(2)
         let mut lctree: LinkCutTree<FindSum> = super::LinkCutTree::new();
-        let weights = [9.0, 1.0, 8.0, 0.0, 6.0, 2.0, 4.0, 3.0, 7.0, 5.0];
-        for i in 0..weights.len() {
-            lctree.make_tree(weights[i]);
-        }
-        lctree.link(1, 0);
-        lctree.link(2, 1);
-        lctree.link(3, 1);
-        lctree.link(4, 2);
-        lctree.link(5, 0);
-        lctree.link(6, 5);
-        lctree.link(7, 6);
-        lctree.link(8, 7);
-        lctree.link(9, 7);
+        let a = lctree.make_tree(0.0);
+        let b = lctree.make_tree(10.);
+        let c = lctree.make_tree(3.);
+        let d = lctree.make_tree(11.);
+        let e = lctree.make_tree(7.);
+        let f = lctree.make_tree(2.);
+
+        lctree.link(b, a);
+        lctree.link(c, b);
+        lctree.link(d, b);
+        lctree.link(e, a);
+        lctree.link(f, e);
 
         // We check the node index with max weight in the path from each node to the root:
-        assert_eq!(lctree.path(4, 5).sum, 26.);
-        assert_eq!(lctree.path(3, 6).sum, 16.);
-        assert_eq!(lctree.path(2, 7).sum, 27.);
-        assert_eq!(lctree.path(1, 8).sum, 26.);
-        assert_eq!(lctree.path(0, 9).sum, 23.);
-        assert_eq!(lctree.path(4, 3).sum, 15.);
-        assert_eq!(lctree.path(5, 7).sum, 9.);
+        assert_eq!(lctree.path(c, f).sum, 22.);
+        assert_eq!(lctree.path(d, f).sum, 30.);
+        assert_eq!(lctree.path(a, f).sum, 9.);
+        assert_eq!(lctree.path(a, a).sum, 0.);
+        assert_eq!(lctree.path(c, d).sum, 24.);
     }
 
     #[test]
