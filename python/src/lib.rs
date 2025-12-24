@@ -11,7 +11,7 @@ pub struct FindMaxTreeWrapper {
 impl FindMaxTreeWrapper {
     #[new]
     fn new() -> Self {
-        let lctree: LinkCutTree<FindMax> = LinkCutTree::default();
+        let lctree: LinkCutTree<FindMax> = LinkCutTree::new();
         FindMaxTreeWrapper { lctree }
     }
 

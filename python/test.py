@@ -23,7 +23,7 @@ tree.link(e, a)
 tree.link(f, e)
 
 # Check connectivity:
-assert tree.connected(c, f) == True
+assert tree.connected(c, f)
 
 # Find the node with the maximum weight on the path from c to f:
 (max_idx, max_weight) = tree.find_max(c, f)
@@ -34,6 +34,6 @@ assert max_weight == 9.0
 tree.cut(e, a)
 
 # Now c and f should not be connected anymore:
-assert tree.connected(c, f) == False
+assert not tree.connected(c, f)
 
-print("All tests passed!")
+print("OK!")

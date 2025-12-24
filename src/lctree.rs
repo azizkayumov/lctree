@@ -534,7 +534,7 @@ mod tests {
 
         // Checking the xor of weights on the path from each node to the root:
         let result = lctree.path(c, f);
-        assert_eq!(result.xor, 3 ^ 10 ^ 7 ^ 2);
+        assert_eq!(result.xor, 3 ^ 10 ^ 0 ^ 7 ^ 2);
     }
 
     #[test]
