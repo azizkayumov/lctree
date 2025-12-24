@@ -24,14 +24,13 @@ jobs:
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
-          target: ${{ matrix.platform.target }}
           args: --release --out dist -m python/Cargo.toml
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-linux-${{ matrix.platform.target }}
+          name: wheels-linux
           path: dist
 
   windows:

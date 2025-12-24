@@ -109,5 +109,6 @@ impl FindXorTreeWrapper {
 fn lctree_rs(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<FindMaxTreeWrapper>()?;
     m.add_class::<FindSumTreeWrapper>()?;
+    m.add_class::<FindXorTreeWrapper>()?;
     Ok(())
 }

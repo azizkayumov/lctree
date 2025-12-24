@@ -519,12 +519,12 @@ mod tests {
         //     /   \     \
         //   c(3)  d(11)  f(2)
         let mut lctree: LinkCutTree<FindXor> = super::LinkCutTree::new();
-        let a = lctree.make_tree(9.);
-        let b = lctree.make_tree(1.);
-        let c = lctree.make_tree(8.);
-        let d = lctree.make_tree(10.);
-        let e = lctree.make_tree(2.);
-        let f = lctree.make_tree(4.);
+        let a = lctree.make_tree(0.0);
+        let b = lctree.make_tree(10.);
+        let c = lctree.make_tree(3.);
+        let d = lctree.make_tree(11.);
+        let e = lctree.make_tree(7.);
+        let f = lctree.make_tree(2.);
 
         lctree.link(b, a);
         lctree.link(c, b);
@@ -534,7 +534,7 @@ mod tests {
 
         // Checking the xor of weights on the path from each node to the root:
         let result = lctree.path(c, f);
-        assert_eq!(result.xor, 8 ^ 1 ^ 9 ^ 2 ^ 4);
+        assert_eq!(result.xor, 3 ^ 10 ^ 7 ^ 2);
     }
 
     #[test]
