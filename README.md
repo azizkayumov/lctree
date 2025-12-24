@@ -1,4 +1,4 @@
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/azizkayumov/lctree/ci.yml?style=plastic)](#)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/azizkayumov/lctree/rust.yml?style=plastic)](#)
 [![crates.io](https://img.shields.io/crates/v/lctree)](https://crates.io/crates/lctree)
 [![codecov](https://codecov.io/gh/azizkayumov/lctree/graph/badge.svg?token=RBW7UKFCS0)](https://codecov.io/gh/azizkayumov/lctree)
 
