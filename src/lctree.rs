@@ -291,7 +291,7 @@ impl Default for LinkCutTree<FindMax> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{FindMin, FindSum, LinkCutTree};
+    use crate::{FindSum, FindXor, LinkCutTree};
 
     #[test]
     pub fn link_cut() {
@@ -510,7 +510,7 @@ mod tests {
     }
 
     #[test]
-    pub fn findmin() {
+    pub fn findxor() {
         // We form a link-cut tree from the following rooted tree
         // (the numbers in parentheses are the weights of the nodes):
         //         a(0)
@@ -518,7 +518,7 @@ mod tests {
         //     b(10)   e(7)
         //     /   \     \
         //   c(3)  d(11)  f(2)
-        let mut lctree: LinkCutTree<FindMin> = super::LinkCutTree::new();
+        let mut lctree: LinkCutTree<FindXor> = super::LinkCutTree::new();
         let a = lctree.make_tree(0.0);
         let b = lctree.make_tree(10.);
         let c = lctree.make_tree(3.);
@@ -532,12 +532,9 @@ mod tests {
         lctree.link(e, a);
         lctree.link(f, e);
 
-        // We check the node index with max weight in the path from each node to the root:
-        assert_eq!(lctree.path(c, f).idx, a);
-        assert_eq!(lctree.path(d, f).idx, a);
-        assert_eq!(lctree.path(a, f).idx, a);
-        assert_eq!(lctree.path(e, f).idx, f);
-        assert_eq!(lctree.path(c, d).idx, c);
+        // Checking the xor of weights on the path from each node to the root:
+        let result = lctree.path(c, f);
+        assert_eq!(result.xor, 3 ^ 10 ^ 0 ^ 7 ^ 2);
     }
 
     #[test]

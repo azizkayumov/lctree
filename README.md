@@ -64,10 +64,10 @@ Advanced usage include operations on paths:
 <details>
 <summary>Common path aggregates</summary>
 
-Various kinds of calculations can be performed on a path between two nodes, such as `findmax`, `findmin`, or `findsum`:
+Various kinds of calculations can be performed on a path between two nodes, such as `findmax` or `findsum`:
 
 ```rust
-use lctree::{LinkCutTree, FindMax, FindMin, FindSum};
+use lctree::{LinkCutTree, FindMax, FindSum};
 
 fn main() {
     // We form a link-cut tree from the following rooted tree
@@ -78,7 +78,7 @@ fn main() {
     //        /   \    \
     //      c(8)  d(10)  f(4)
 
-    // Use FindMax, FindMin or FindSum, depending on your usage:
+    // Use FindMax or FindSum, depending on your usage:
     let mut lctree: LinkCutTree<FindSum> = lctree::LinkCutTree::new();
     let a = lctree.make_tree(9.);
     let b = lctree.make_tree(1.);

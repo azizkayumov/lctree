@@ -23,25 +23,6 @@ impl Path for FindMax {
 }
 
 #[derive(Copy, Clone)]
-pub struct FindMin {
-    pub idx: usize,
-    pub weight: f64,
-}
-
-impl Path for FindMin {
-    fn default(weight: f64, index: usize) -> Self {
-        FindMin { idx: index, weight }
-    }
-
-    fn aggregate(&mut self, other: Self) {
-        if other.weight < self.weight {
-            self.weight = other.weight;
-            self.idx = other.idx;
-        }
-    }
-}
-
-#[derive(Copy, Clone)]
 pub struct FindSum {
     pub sum: f64,
 }
@@ -53,5 +34,21 @@ impl Path for FindSum {
 
     fn aggregate(&mut self, other: Self) {
         self.sum += other.sum;
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct FindXor {
+    pub xor: u64,
+}
+
+impl Path for FindXor {
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    fn default(weight: f64, _: usize) -> Self {
+        FindXor { xor: weight as u64 }
+    }
+
+    fn aggregate(&mut self, other: Self) {
+        self.xor ^= other.xor;
     }
 }

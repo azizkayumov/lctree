@@ -1,4 +1,4 @@
-use lctree::{FindSum, LinkCutTree, Path};
+use lctree::{FindSum, LinkCutTree};
 
 #[test]
 pub fn path_aggregation() {
@@ -10,7 +10,7 @@ pub fn path_aggregation() {
     //        /   \    \
     //      c(8)  d(10)  f(4)
 
-    // Use FindMax, FindMin or FindSum, depending on your usage:
+    // Use FindMax or FindSum, depending on your usage:
     let mut lctree: LinkCutTree<FindSum> = lctree::LinkCutTree::new();
     let a = lctree.make_tree(9.);
     let b = lctree.make_tree(1.);
@@ -28,19 +28,4 @@ pub fn path_aggregation() {
     // We find the sum of the weights on the path between c to f,
     let result = lctree.path(c, f);
     assert_eq!(result.sum, 8. + 1. + 9. + 2. + 4.);
-}
-
-#[derive(Copy, Clone)]
-pub struct FindXor {
-    pub xor: u64,
-}
-
-impl Path for FindXor {
-    fn default(weight: f64, _: usize) -> Self {
-        FindXor { xor: weight as u64 }
-    }
-
-    fn aggregate(&mut self, other: Self) {
-        self.xor ^= other.xor;
-    }
 }
