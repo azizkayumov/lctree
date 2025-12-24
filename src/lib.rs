@@ -26,4 +26,4 @@ mod node;
 mod path;
 mod splay;
 pub use crate::lctree::LinkCutTree;
-pub use path::{FindMax, FindMin, FindSum, Path};
+pub use path::{FindMax, FindSum, FindXor, Path};

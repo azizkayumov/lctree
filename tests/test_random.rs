@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 pub fn validation() {
     // These can be larger if you have time to spare:
     let num_nodes: usize = 100;
-    let num_operations: usize = 2000;
+    let num_operations: usize = 10_000;
 
     let seed = rand::thread_rng().gen();
     println!("Seed: {}", seed); // print seed so we can reproduce the test (if it fails).
