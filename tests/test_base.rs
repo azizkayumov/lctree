@@ -1,4 +1,4 @@
-use lctree::LinkCutTree;
+use lctree::{FindMax, LinkCutTree};
 
 #[test]
 pub fn basic_usage() {
@@ -9,7 +9,7 @@ pub fn basic_usage() {
     //         b(1)    e(2)
     //        /   \      \
     //      c(8)  d(10)   f(4)
-    let mut lctree = LinkCutTree::default();
+    let mut lctree: LinkCutTree<FindMax> = LinkCutTree::new();
     let a = lctree.make_tree(9.);
     let b = lctree.make_tree(1.);
     let c = lctree.make_tree(8.);

@@ -15,21 +15,22 @@ This example shows how to link and cut edges:
 use lctree::LinkCutTree;
 
 fn main() {
-    // We form a link-cut tree for the following forest:
+    // Build a forest consisting of 6 nodes with the following weights
     // (the numbers in parentheses are the weights of the nodes):
-    //            a(9)
-    //           /    \
-    //         b(1)    e(2)
-    //        /   \      \
-    //      c(8)  d(10)   f(4)
-    let mut lctree = LinkCutTree::default();
+    let mut lctree: LinkCutTree<FindMax> = LinkCutTree::new();
     let a = lctree.make_tree(9.);
     let b = lctree.make_tree(1.);
     let c = lctree.make_tree(8.);
     let d = lctree.make_tree(10.);
     let e = lctree.make_tree(2.);
     let f = lctree.make_tree(4.);
-
+    
+    //  Link the nodes to form the following tree
+    //            a(9)
+    //           /    \
+    //         b(1)    e(2)
+    //        /   \      \
+    //      c(8)  d(10)   f(4)
     lctree.link(b, a);
     lctree.link(c, b);
     lctree.link(d, b);
@@ -39,14 +40,12 @@ fn main() {
     // Checking connectivity:
     assert!(lctree.connected(c, f)); // connected
 
-    // Path aggregation:
-    // We find the node with max weight on the path between c to f,
-    // where a has the maximum weight of 9.0:
+    // Find the node with the maximum weight on the path from c to f:
     let heaviest_node = lctree.path(c, f);
     assert_eq!(heaviest_node.idx, a);
     assert_eq!(heaviest_node.weight, 9.0);
 
-    // We cut node e from its parent a:
+    // Cut the edge between e and a:
     lctree.cut(e, a);
 
     // The forest should now look like this:
@@ -56,116 +55,10 @@ fn main() {
     //        /   \        \
     //      c(8)  d(10)    f(4)
 
-    // We check connectivity again:
+    // Now c and f should not be connected anymore:
     assert!(!lctree.connected(c, f)); // not connected anymore
 }
 ```
-Advanced usage include operations on paths:
-<details>
-<summary>Common path aggregates</summary>
-
-Various kinds of calculations can be performed on a path between two nodes, such as `findmax` or `findsum`:
-
-```rust
-use lctree::{LinkCutTree, FindMax, FindSum};
-
-fn main() {
-    // We form a link-cut tree from the following rooted tree
-    // (the numbers in parentheses are the weights of the nodes):
-    //           a(9)
-    //           /  \
-    //         b(1)  e(2)
-    //        /   \    \
-    //      c(8)  d(10)  f(4)
-
-    // Use FindMax or FindSum, depending on your usage:
-    let mut lctree: LinkCutTree<FindSum> = lctree::LinkCutTree::new();
-    let a = lctree.make_tree(9.);
-    let b = lctree.make_tree(1.);
-    let c = lctree.make_tree(8.);
-    let d = lctree.make_tree(10.);
-    let e = lctree.make_tree(2.);
-    let f = lctree.make_tree(4.);
-
-    lctree.link(b, a);
-    lctree.link(c, b);
-    lctree.link(d, b);
-    lctree.link(e, a);
-    lctree.link(f, e);
-
-    // We find the sum of the weights on the path between c to f,
-    let result = lctree.path(c, f);
-    assert_eq!(result.sum, 8. + 1. + 9. + 2. + 4.);
-}
-```
-</details>
-
-<details>
-<summary>Custom path aggregate function</summary>
-    
-A custom path aggregate function can be defined by using the `Path` trait:
-    
-```rust
-use lctree::{LinkCutTree, Path};
-
-#[derive(Copy, Clone)]
-pub struct FindXor {
-    pub xor: u64,
-}
-
-impl Path for FindXor {
-    fn default(weight: f64, _: usize) -> Self {
-        FindXor {
-            xor: weight as u64,
-        }
-    }
-
-    fn aggregate(&mut self, other: Self) {
-        self.xor ^= other.xor;
-    }
-}
-
-fn main() {
-    // We form a link-cut tree from the following rooted tree
-    // (the numbers in parentheses are the weights of the nodes):
-    //           a(9)
-    //           /  \
-    //         b(1)  e(2)
-    //        /   \    \
-    //      c(8)  d(10)  f(4)
-    let mut lctree: LinkCutTree<FindXor> = LinkCutTree::new();
-    let a = lctree.make_tree(9.);
-    let b = lctree.make_tree(1.);
-    let c = lctree.make_tree(8.);
-    let d = lctree.make_tree(10.);
-    let e = lctree.make_tree(2.);
-    let f = lctree.make_tree(4.);
-
-    lctree.link(b, a);
-    lctree.link(c, b);
-    lctree.link(d, b);
-    lctree.link(e, a);
-    lctree.link(f, e);
-
-    // We find the xor of the weights on the path between c to f,
-    let result = lctree.path(c, f);
-    assert_eq!(result.xor, 8 ^ 1 ^ 9 ^ 2 ^ 4);
-}
-```
-
-</details>
-
-## Benchmark
-The overall running time for performing a number of random operations (`link(v, w)`, `cut(v, w)`, `connected(v, w)` or `findmax(v, w)`) on forests of varying sizes (check benchmark details [here](https://github.com/azizkayumov/lctree/blob/main/benches/README.md)).
-
-| # Nodes     | # Operations    | [lctree](https://github.com/azizkayumov/lctree/blob/main/src/lctree.rs)    | [brute-force](https://github.com/azizkayumov/lctree/blob/main/benches/benchmark.rs)  |
-| :---        | :---            | :---          | :---            |
-| 100         | 10K             | 4.8161 ms     | 18.013 ms       |
-| 200         | 20K             | 11.091 ms     | 69.855 ms       |
-| 500         | 50K             | 31.623 ms     | 429.53 ms       |
-| 1000        | 100K            | 68.649 ms     | 1.8746 s        |
-| 5000        | 500K            | 445.83 ms     | 46.854 s        |
-| 10K         | 1M              | 964.64 ms     | 183.24 s        |
 
 ## Credits
 This crate applies the core concepts and ideas presented in the following sources:
